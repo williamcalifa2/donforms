@@ -33,12 +33,25 @@ export default async function PublicFormPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: form, error } = await (supabase as any)
     .from("forms")
-    .select("id, title, slug, settings, fields")
+    .select("id, title, slug, settings, fields, user_id")
     .eq("slug", slug)
     .eq("is_published", true)
-    .single() as { data: Pick<Form, "id" | "title" | "slug" | "settings" | "fields"> | null; error: unknown };
+    .single() as { data: (Pick<Form, "id" | "title" | "slug" | "settings" | "fields"> & { user_id: string }) | null; error: unknown };
 
   if (error || !form) notFound();
+
+  // Fetch workspace logo from owner's profile
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase as any)
+    .from("profiles")
+    .select("workspace_logo_url")
+    .eq("id", form!.user_id)
+    .single() as { data: { workspace_logo_url: string | null } | null };
+
+  const settings = {
+    ...form!.settings,
+    logoUrl: form!.settings.logoUrl ?? profile?.workspace_logo_url ?? null,
+  };
 
   // Check access control: maxResponses
   if (form!.settings.maxResponses) {
@@ -74,7 +87,7 @@ export default async function PublicFormPage({ params }: Props) {
       formId={form!.id}
       title={form!.title}
       fields={fields}
-      settings={form!.settings}
+      settings={settings}
     />
   );
 }

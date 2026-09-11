@@ -40,6 +40,6 @@ export default async function EditFormPage({ params }: Props) {
 
   if (error || !form) notFound();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.vercel.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.com.br";
   return <FormEditor form={form as Form} appUrl={appUrl} />;
 }

@@ -60,34 +60,45 @@ export default async function DashboardLayout({
           borderRight: "1px solid var(--sidebar-border)",
         }}
       >
-        {/* Workspace logo */}
-        <Link href="/dashboard" className="px-4 h-14 flex items-center gap-2.5 shrink-0 hover:opacity-80 transition-opacity"
-          style={{ borderBottom: "1px solid var(--sidebar-border)" }}>
+        {/* Workspace */}
+        <Link
+          href="/dashboard"
+          className="px-4 h-14 flex items-center gap-2.5 shrink-0 transition-opacity hover:opacity-75"
+          style={{ borderBottom: "1px solid var(--sidebar-border)" }}
+        >
           {workspaceLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={workspaceLogo} alt={workspaceName}
-              className="h-7 w-7 rounded-md object-cover" />
+              className="h-7 w-7 rounded-lg object-cover flex-shrink-0" />
           ) : (
-            <div className="h-7 w-7 rounded-md flex items-center justify-center text-white shrink-0"
-              style={{ background: "var(--gradient-primary)" }}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                className="h-3.5 w-3.5">
-                <path d="M9 11l3 3L22 4"/>
-                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            <div
+              className="h-7 w-7 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+              style={{
+                background: "var(--gradient-primary)",
+                boxShadow: "0 2px 8px var(--accent-glow)",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
+                <path d="M13 2L4.09 12.97A1 1 0 005 14.5h6.5L10 22l9.91-10.97A1 1 0 0019 10H12.5L13 2z"/>
               </svg>
             </div>
           )}
-          <span className="font-semibold text-sm leading-tight truncate"
-            style={{ color: "var(--sidebar-text-active)" }}>
-            {workspaceName}
-          </span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[13px] font-700 leading-tight truncate"
+              style={{ color: "var(--sidebar-text-active)", fontWeight: 700 }}>
+              {workspaceName}
+            </span>
+            <span className="text-[10px] leading-tight"
+              style={{ color: "var(--text-tertiary)" }}>
+              Workspace
+            </span>
+          </div>
         </Link>
 
         {/* Nav */}
         <SidebarNav />
 
-        {/* User menu at bottom */}
+        {/* User */}
         <div style={{ borderTop: "1px solid var(--sidebar-border)" }}>
           <SidebarUserMenu
             displayName={displayName}
@@ -101,9 +112,16 @@ export default async function DashboardLayout({
       </aside>
 
       {/* ── Main ── */}
-      <div className="flex-1 flex flex-col min-h-screen"
-        style={{ marginLeft: "var(--sidebar-width)", background: "var(--main-bg)" }}>
-        <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-8">
+      <div
+        className="flex-1 flex flex-col min-h-screen"
+        style={{
+          marginLeft: "var(--sidebar-width)",
+          background: "var(--main-bg)",
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.032) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+        }}
+      >
+        <main className="flex-1 max-w-5xl mx-auto w-full px-8 py-8">
           {children}
         </main>
       </div>

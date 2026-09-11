@@ -24,28 +24,40 @@ interface Props {
   primaryColor: string;
   direction: 1 | -1;
   error?: string;
+  accentRgb: [number, number, number];
+  textColor: string;
 }
 
 const variants = {
-  enter: (dir: number) => ({ y: dir > 0 ? 60 : -60, opacity: 0 }),
-  center: { y: 0, opacity: 1, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const } },
-  exit: (dir: number) => ({
-    y: dir > 0 ? -60 : 60,
+  enter: (dir: number) => ({
+    y: dir > 0 ? 80 : -80,
     opacity: 0,
-    transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const },
+    filter: "blur(6px)",
+  }),
+  center: {
+    y: 0,
+    opacity: 1,
+    filter: "blur(0px)",
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
+  },
+  exit: (dir: number) => ({
+    y: dir > 0 ? -80 : 80,
+    opacity: 0,
+    filter: "blur(6px)",
+    transition: { duration: 0.3, ease: [0.4, 0, 1, 1] as const },
   }),
 };
 
-// Tipos que avançam automaticamente (sem botão OK)
 const AUTO_ADVANCE_TYPES = new Set(["multiple_choice", "yes_no"]);
-// Tipos que não têm input (sem botão OK)
 const NO_OK_TYPES = new Set(["statement"]);
 
 export function QuestionSlide({
-  field, index, total, value, onChange, onNext, onPrev, isLast, primaryColor, direction, error,
+  field, index, value, onChange, onNext, onPrev, isLast,
+  primaryColor, direction, error, accentRgb, textColor,
 }: Props) {
   const isStatement = field.type === "statement";
   const showOK = !AUTO_ADVANCE_TYPES.has(field.type) && !NO_OK_TYPES.has(field.type);
+  const [r, g, b] = accentRgb;
 
   return (
     <motion.div
@@ -55,224 +67,245 @@ export function QuestionSlide({
       initial="enter"
       animate="center"
       exit="exit"
-      className="w-full max-w-xl mx-auto px-6"
+      style={{
+        width: "100%",
+        maxWidth: 680,
+        padding: "0 32px",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
-      {/* Badge numérico — ocultar em statement */}
+      {/* Step indicator */}
       {!isStatement && (
-        <div className="flex items-center gap-2 mb-4">
+        <motion.div
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            marginBottom: 24,
+          }}
+        >
           <span
             style={{
               background: primaryColor,
               color: "#000",
-              fontSize: "11px",
-              fontWeight: 700,
-              width: "16px",
-              height: "19px",
-              borderRadius: "5px 3px",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "0 4px",
-              lineHeight: 1,
-              letterSpacing: 0,
-              flexShrink: 0,
+              fontSize: 11, fontWeight: 800,
+              width: 22, height: 22,
+              borderRadius: "6px 3px",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              letterSpacing: 0, lineHeight: 1,
               fontFamily: "inherit",
+              boxShadow: `0 2px 8px rgba(${r},${g},${b},0.4)`,
             }}
           >
             {index + 1}
           </span>
-          <span style={{ fontSize: "13px", opacity: 0.35, fontWeight: 400 }}>→</span>
-        </div>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke={textColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.3"/>
+          </svg>
+        </motion.div>
       )}
 
       {/* Label */}
-      <h2
+      <motion.h2
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08, duration: 0.4, ease: [0.22,1,0.36,1] }}
         style={{
-          fontSize: isStatement ? "32px" : "26px",
-          fontWeight: 700,
-          lineHeight: isStatement ? "1.2" : "34px",
+          fontSize: isStatement ? "clamp(30px, 5vw, 48px)" : "clamp(24px, 4vw, 38px)",
+          fontWeight: 800,
+          lineHeight: isStatement ? 1.15 : 1.2,
           letterSpacing: "-0.5px",
-          marginBottom: "8px",
-          color: "#ffffff",
+          marginBottom: 10,
+          color: textColor,
         }}
       >
         {field.label}
         {!isStatement && field.required && (
-          <span style={{ color: "#ffffff", marginLeft: "4px", fontSize: "20px" }}>*</span>
+          <span style={{ color: primaryColor, marginLeft: 4, fontSize: "0.6em", verticalAlign: "super", opacity: 0.8 }}>*</span>
         )}
-      </h2>
+      </motion.h2>
 
-      {/* Subtítulo / Descrição */}
+      {/* Description */}
       {field.description && (
-        <p style={{ fontSize: "16px", opacity: 0.5, marginBottom: "28px", lineHeight: "1.5", color: "#ffffff" }}>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.14, duration: 0.35 }}
+          style={{ fontSize: 17, lineHeight: 1.55, marginBottom: 32, color: textColor, opacity: 0.45 }}
+        >
           {field.description}
-        </p>
+        </motion.p>
       )}
+      {!field.description && <div style={{ marginBottom: 28 }} />}
 
-      {!field.description && <div style={{ marginBottom: "28px" }} />}
-
-      {/* Campo */}
+      {/* Field input */}
       {!isStatement && (
-        <div className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18, duration: 0.4 }}
+          style={{ marginBottom: error ? 10 : 28 }}
+        >
           {field.type === "short_text" && (
-            <ShortTextField value={value} onChange={onChange}
-              placeholder={field.placeholder} primaryColor={primaryColor} onEnter={onNext} />
+            <ShortTextField value={value} onChange={onChange} placeholder={field.placeholder} primaryColor={primaryColor} onEnter={onNext} />
           )}
           {field.type === "long_text" && (
-            <LongTextField value={value} onChange={onChange}
-              placeholder={field.placeholder} onEnter={onNext} />
+            <LongTextField value={value} onChange={onChange} placeholder={field.placeholder} onEnter={onNext} />
           )}
           {field.type === "email" && (
-            <EmailField value={value} onChange={onChange}
-              placeholder={field.placeholder} onEnter={onNext} />
+            <EmailField value={value} onChange={onChange} placeholder={field.placeholder} onEnter={onNext} />
           )}
           {field.type === "number" && (
-            <NumberField value={value} onChange={onChange}
-              placeholder={field.placeholder} min={field.min} max={field.max} onEnter={onNext} />
+            <NumberField value={value} onChange={onChange} placeholder={field.placeholder} min={field.min} max={field.max} onEnter={onNext} />
           )}
           {field.type === "phone" && (
-            <PhoneField value={value} onChange={onChange}
-              placeholder={field.placeholder} onEnter={onNext} primaryColor={primaryColor} />
+            <PhoneField value={value} onChange={onChange} placeholder={field.placeholder} onEnter={onNext} primaryColor={primaryColor} />
           )}
           {field.type === "date" && (
             <DateField value={value} onChange={onChange} onEnter={onNext} />
           )}
           {field.type === "multiple_choice" && (
-            <MultipleChoiceField value={value} onChange={onChange}
-              options={field.options ?? []} primaryColor={primaryColor} onEnter={onNext} />
+            <MultipleChoiceField value={value} onChange={onChange} options={field.options ?? []} primaryColor={primaryColor} onEnter={onNext} />
           )}
           {field.type === "yes_no" && (
-            <YesNoField value={value} onChange={onChange}
-              primaryColor={primaryColor} onEnter={onNext} />
+            <YesNoField value={value} onChange={onChange} primaryColor={primaryColor} onEnter={onNext} />
           )}
           {field.type === "rating" && (
-            <RatingField value={value} onChange={onChange}
-              primaryColor={primaryColor} scale={field.scale ?? 5} />
+            <RatingField value={value} onChange={onChange} primaryColor={primaryColor} scale={field.scale ?? 5} />
           )}
-        </div>
+        </motion.div>
       )}
 
-      {/* Erro */}
+      {/* Error */}
       {error && (
-        <p style={{ color: "#ff6b6b", fontSize: "13px", marginBottom: "12px" }}>{error}</p>
+        <motion.p
+          initial={{ opacity: 0, x: -6 }}
+          animate={{ opacity: 1, x: 0 }}
+          style={{ color: "#ff6b6b", fontSize: 13, fontWeight: 500, marginBottom: 16 }}
+        >
+          {error}
+        </motion.p>
       )}
 
-      {/* Botões */}
-      <div className="flex items-center gap-2">
-        {/* OK / Continuar / Enviar */}
+      {/* Action row */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25, duration: 0.35 }}
+        style={{ display: "flex", alignItems: "center", gap: 10 }}
+      >
+        {/* OK / Continue / Send button */}
         {(showOK || isStatement) && (
           <button
             onClick={onNext}
             style={{
-              background: "rgba(0,0,0,0.3)",
-              color: "#F2F3F8",
-              borderRadius: "32px",
-              padding: "8px 14px",
-              fontSize: "18px",
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              border: `1px solid ${primaryColor}33`,
-              transition: "all 0.15s",
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "8px 16px",
+              borderRadius: 8,
+              background: primaryColor,
+              color: "#ffffff",
+              fontSize: 14, fontWeight: 700,
+              fontFamily: "'Darker Grotesque', sans-serif",
+              border: "none",
               cursor: "pointer",
-              fontFamily: "inherit",
+              letterSpacing: "-0.2px",
+              transition: "transform 0.12s, box-shadow 0.12s",
+              boxShadow: `0 4px 16px rgba(${r},${g},${b},0.35)`,
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.5)";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = `${primaryColor}66`;
+              (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.04)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 6px 24px rgba(${r},${g},${b},0.5)`;
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.3)";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = `${primaryColor}33`;
+              (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px rgba(${r},${g},${b},0.35)`;
             }}
           >
             {isStatement ? "Continuar" : isLast ? "Enviar" : "OK"}
-            <span style={{ fontSize: "14px", opacity: 0.6 }}>
+            <span style={{ fontSize: 13, opacity: 0.85 }}>
               {isStatement ? "→" : isLast ? "✓" : "↵"}
             </span>
           </button>
         )}
 
-        {/* Rating: botão OK separado */}
+        {/* Rating OK */}
         {field.type === "rating" && value && (
           <button
             onClick={onNext}
             style={{
-              background: "rgba(0,0,0,0.3)",
-              color: "#F2F3F8",
-              borderRadius: "32px",
-              padding: "8px 14px",
-              fontSize: "18px",
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              border: `1px solid ${primaryColor}33`,
-              transition: "all 0.15s",
-              cursor: "pointer",
-              fontFamily: "inherit",
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "8px 16px", borderRadius: 8,
+              background: primaryColor, color: "#fff",
+              fontSize: 14, fontWeight: 700, fontFamily: "inherit",
+              border: "none", cursor: "pointer",
+              boxShadow: `0 4px 16px rgba(${r},${g},${b},0.35)`,
             }}
           >
             {isLast ? "Enviar ✓" : "OK ↵"}
           </button>
         )}
 
-        {/* Par de setas de navegação */}
-        <div className="flex items-center ml-2">
-          {/* Seta: voltar */}
+        {/* Nav arrows — prev / next */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 4 }}>
           <button
             onClick={onPrev}
             disabled={index === 0}
             title="Voltar"
             style={{
-              background: index === 0 ? "rgba(0,0,0,0.1)" : "rgba(0,0,0,0.3)",
-              border: `1px solid ${primaryColor}22`,
-              borderRight: "none",
-              borderRadius: "32px 2px 2px 32px",
-              width: "36px",
-              height: "36px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              width: 36, height: 36,
+              borderRadius: "8px 4px 4px 8px",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              display: "flex", alignItems: "center", justifyContent: "center",
               cursor: index === 0 ? "not-allowed" : "pointer",
-              transition: "all 0.15s",
-              opacity: index === 0 ? 0.3 : 1,
+              opacity: index === 0 ? 0.25 : 0.7,
+              transition: "opacity 0.15s",
             }}
+            onMouseEnter={e => { if (index > 0) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            onMouseLeave={e => { if (index > 0) (e.currentTarget as HTMLButtonElement).style.opacity = "0.7"; }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 12L6 8l4-4" stroke="#CBCDE5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M10 12L6 8l4-4" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          {/* Seta: avançar */}
           <button
             onClick={onNext}
             title="Próxima"
             style={{
-              background: "rgba(0,0,0,0.3)",
-              border: `1px solid ${primaryColor}22`,
-              borderRadius: "2px 32px 32px 2px",
-              width: "36px",
-              height: "36px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "all 0.15s",
+              width: 36, height: 36,
+              borderRadius: "4px 8px 8px 4px",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", opacity: 0.7,
+              transition: "opacity 0.15s",
             }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.7"; }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 4l4 4-4 4" stroke="#CBCDE5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M6 4l4 4-4 4" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Hint teclado */}
+      {/* Keyboard hint */}
       {showOK && field.type !== "long_text" && (
-        <p style={{ fontSize: "12px", opacity: 0.25, marginTop: "16px" }}>
-          Pressione <kbd style={{ fontFamily: "monospace", background: "rgba(255,255,255,0.08)", padding: "1px 5px", borderRadius: "4px" }}>Enter ↵</kbd> para avançar
-        </p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          style={{ fontSize: 11, opacity: 0.22, marginTop: 14, letterSpacing: "0.02em" }}
+        >
+          Pressione{" "}
+          <kbd style={{ fontFamily: "monospace", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", padding: "1px 5px", borderRadius: 4 }}>
+            Enter ↵
+          </kbd>{" "}
+          para avançar
+        </motion.p>
       )}
     </motion.div>
   );

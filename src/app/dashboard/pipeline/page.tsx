@@ -131,7 +131,7 @@ export default async function PipelinePage() {
   // Mapa form_id → form
   const formMap = new Map(forms.map(f => [f.id, f]));
 
-  // ── Calcular MQLs por campo de faturamento ───────────────────────────────
+  // ── Calcular MQLs por campo de qualificação ──────────────────────────────
   const subsWithMeta = allSubs.map(sub => {
     const form = formMap.get(sub.form_id);
     const fields = (form?.fields ?? []) as import("@/types/database.types").FormField[];
@@ -183,7 +183,7 @@ export default async function PipelinePage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total de leads",   value: totalLeads, sub: "todos os forms" },
-          { label: "MQLs totais",      value: totalMqls,  sub: "faturamento qualificado", accent: true },
+          { label: "MQLs totais",      value: totalMqls,  sub: "leads qualificados", accent: true },
           { label: "Taxa de MQL",      value: `${mqlRate}%`, sub: "leads → MQL" },
           { label: "MQLs (7 dias)",    value: mqls7d,     sub: "última semana" },
         ].map(({ label, value, sub, accent }) => (
@@ -316,8 +316,8 @@ export default async function PipelinePage() {
           style={{ background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.18)", color: "#fbbf24" }}>
           <span>⚠</span>
           <span>
-            Nenhum formulário tem campo de faturamento configurado.{" "}
-            Vá no editor de cada form → Configurações → <strong>Qualificação MQL</strong> e selecione o campo de faturamento.
+            Nenhum formulário tem campo de qualificação configurado.{" "}
+            Vá no editor de cada form → Configurações → <strong>Qualificação MQL</strong> e ative o campo desejado.
           </span>
         </div>
       )}

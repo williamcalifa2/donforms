@@ -5,7 +5,7 @@ import { NewFormButton } from "@/components/dashboard/NewFormButton";
 import { FormCard } from "@/components/dashboard/FormCard";
 import type { FormWithCount } from "@/types/database.types";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.com.br";
 
 interface Props {
   searchParams: Promise<{ error?: string }>;
@@ -39,15 +39,15 @@ export default async function DashboardPage({ searchParams }: Props) {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-xl font-semibold" style={{ color: "rgba(255,255,255,0.92)" }}>
-            Meus formulários
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+            Formulários
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>
+          <p className="text-[13px] mt-1" style={{ color: "var(--text-secondary)" }}>
             {list.length === 0
-              ? "Crie seu primeiro formulário"
-              : `${list.length} formulário${list.length > 1 ? "s" : ""}`}
+              ? "Crie seu primeiro formulário inteligente"
+              : `${list.length} formulário${list.length > 1 ? "s" : ""} no workspace`}
           </p>
         </div>
         <NewFormButton />

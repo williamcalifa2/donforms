@@ -62,20 +62,43 @@
   }
 }
 
-/* ── Dashboard sidebar variables — Pautta palette ── */
+/* ── Dashboard design tokens ── */
 :root {
-  --sidebar-bg: #0E101B;                        /* hsl(230 30% 8%) */
-  --sidebar-border: rgba(41, 44, 61, 0.8);      /* hsl(230 20% 20%) */
-  --sidebar-text: rgba(239, 241, 245, 0.4);     /* foreground 40% */
-  --sidebar-text-active: rgba(239, 241, 245, 0.92);
-  --sidebar-hover: rgba(41, 44, 61, 0.5);
-  --sidebar-active: rgba(123, 123, 255, 0.12);  /* primary 12% */
-  --sidebar-width: 220px;
-  --main-bg: #0C0E18;                           /* hsl(230 35% 7%) */
-  --card-bg: #121421;                           /* hsl(230 30% 10%) */
-  --card-border: rgba(41, 44, 61, 0.6);
-  --gradient-primary: linear-gradient(135deg, hsl(238 100% 74%), hsl(238 55% 57%));
-  --shadow-elegant: 0 10px 30px -10px hsl(238 100% 74% / 0.2);
+  /* Sidebar */
+  --sidebar-bg:          #080A13;
+  --sidebar-border:      rgba(255,255,255,0.06);
+  --sidebar-text:        rgba(200,208,228,0.38);
+  --sidebar-text-active: rgba(200,208,228,0.92);
+  --sidebar-hover:       rgba(255,255,255,0.04);
+  --sidebar-active:      rgba(108,99,255,0.10);
+  --sidebar-accent:      #6C63FF;
+  --sidebar-width:       220px;
+
+  /* Main areas */
+  --main-bg:      #07080F;
+  --card-bg:      #0D0F1A;
+  --card-border:  rgba(255,255,255,0.07);
+  --card-border-hover: rgba(108,99,255,0.35);
+
+  /* Accent */
+  --accent:       #6C63FF;
+  --accent-soft:  rgba(108,99,255,0.12);
+  --accent-glow:  rgba(108,99,255,0.20);
+
+  /* Text */
+  --text-primary:   #EEF0F8;
+  --text-secondary: #8892A4;
+  --text-tertiary:  rgba(136,146,164,0.45);
+
+  /* Status */
+  --green:  #22C55E;
+  --amber:  #F59E0B;
+  --red:    #EF4444;
+
+  /* Misc */
+  --gradient-primary: linear-gradient(135deg, #6C63FF 0%, #9B8FFF 100%);
+  --shadow-card:      0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+  --shadow-accent:    0 4px 20px rgba(108,99,255,0.25);
 }
 
 /* ── Form Player — Don theme ── */

@@ -247,7 +247,7 @@ export function FieldConfig({ field, index, allFields, onChange }: Props) {
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {field.isMqlField
                   ? "Este campo define quem é MQL no pipeline"
-                  : "Marcar como campo de faturamento do lead"}
+                  : "Marcar como campo de qualificação do lead"}
               </p>
             </div>
             <button
@@ -332,38 +332,19 @@ export function FieldConfig({ field, index, allFields, onChange }: Props) {
               {/* Number/text: valor mínimo */}
               {field.type !== "multiple_choice" && field.type !== "yes_no" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-medium">Faturamento mínimo para MQL</label>
+                  <label className="text-xs font-medium">Valor mínimo para qualificar</label>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground shrink-0">R$</span>
                     <input
                       type="number"
                       min={0}
-                      step={1000}
-                      value={field.mqlMinValue ?? 100000}
+                      step={1}
+                      value={field.mqlMinValue ?? 1}
                       onChange={(e) => onChange({ mqlMinValue: Number(e.target.value) })}
                       className="flex-1 h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none"
+                      placeholder="Ex: 10"
                     />
                   </div>
-                  <div className="flex gap-1.5">
-                    {[
-                      { label: "50k", val: 50000 },
-                      { label: "100k", val: 100000 },
-                      { label: "500k", val: 500000 },
-                      { label: "1M", val: 1000000 },
-                    ].map(({ label, val }) => (
-                      <button key={val}
-                        onClick={() => onChange({ mqlMinValue: val })}
-                        className="flex-1 py-1 rounded-lg text-xs font-medium transition-colors"
-                        style={{
-                          background: (field.mqlMinValue ?? 100000) === val ? "rgba(125,131,189,0.2)" : "rgba(255,255,255,0.05)",
-                          border: `1px solid ${(field.mqlMinValue ?? 100000) === val ? "rgba(125,131,189,0.4)" : "rgba(255,255,255,0.08)"}`,
-                          color: (field.mqlMinValue ?? 100000) === val ? "#CBCDE5" : "rgba(255,255,255,0.4)",
-                        }}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <p className="text-[11px] text-muted-foreground">Respostas numéricas ≥ este valor são qualificadas como MQL.</p>
                 </div>
               )}
             </div>

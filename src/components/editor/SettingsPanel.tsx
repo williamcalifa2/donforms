@@ -299,14 +299,14 @@ export function SettingsPanel({ settings, onChange, formUrl, fields = [] }: Prop
                       ? `${(mqlField.mqlQualifyingOptions ?? []).length} opção(ões) qualificam`
                       : mqlField.type === "yes_no"
                         ? `Qualifica quando: ${mqlField.mqlYesQualifies !== false ? "Sim" : "Não"}`
-                        : `Mínimo: R$ ${(mqlField.mqlMinValue ?? 100000).toLocaleString("pt-BR")}`
+                        : `Mínimo: ${(mqlField.mqlMinValue ?? 1).toLocaleString("pt-BR")}`
                     }
                   </p>
                 </div>
               </div>
             ) : (
               <p className="text-[11px] text-muted-foreground">
-                Nenhum campo de faturamento configurado. Selecione um campo em <strong>Perguntas</strong> e ative <em>Qualificação MQL</em>.
+                Nenhum campo de qualificação configurado. Selecione um campo em <strong>Perguntas</strong> e ative <em>Qualificação MQL</em>.
               </p>
             )}
           </Section>

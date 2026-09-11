@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useTransition } from "react";
 import { signOut } from "@/app/actions/auth";
 import { updateProfile } from "@/app/actions/profile";
 import Link from "next/link";
+import { UserCircle, GearSix, SignOut, CaretUp } from "@phosphor-icons/react";
 
 interface Props {
   displayName: string;
@@ -26,9 +27,7 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -70,13 +69,10 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
   return (
     <>
       <div ref={menuRef} className="relative">
-        {/* Trigger */}
         <button
           onClick={() => setOpen(v => !v)}
           className="w-full flex items-center gap-2.5 px-3 py-3 transition-colors text-left"
-          style={{
-            color: "var(--sidebar-text)",
-          }}
+          style={{ color: "var(--sidebar-text)" }}
           onMouseEnter={e => (e.currentTarget.style.background = "var(--sidebar-hover)")}
           onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
         >
@@ -85,14 +81,9 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
             <p className="text-xs font-medium truncate" style={{ color: "var(--sidebar-text-active)" }}>{displayName}</p>
             <p className="text-[10px] truncate" style={{ color: "var(--sidebar-text)" }}>{email}</p>
           </div>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            className="h-3 w-3 shrink-0" style={{ color: "var(--sidebar-text)" }}>
-            <polyline points="18 15 12 9 6 15"/>
-          </svg>
+          <CaretUp size={12} weight="bold" className="shrink-0" style={{ color: "var(--sidebar-text)" }} />
         </button>
 
-        {/* Dropdown — abre pra cima */}
         {open && (
           <div className="absolute bottom-full left-2 right-2 mb-1 rounded-xl shadow-2xl overflow-hidden z-50"
             style={{ background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -108,12 +99,7 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#fff"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Editar perfil
+                <UserCircle size={14} weight="duotone" /> Editar perfil
               </button>
               <Link
                 href="/dashboard/settings"
@@ -123,12 +109,7 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#fff"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                </svg>
-                Configurações do workspace
+                <GearSix size={14} weight="duotone" /> Configurações do workspace
               </Link>
             </div>
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
@@ -139,13 +120,7 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
                   onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,50,50,0.08)"; e.currentTarget.style.color = "#ff6b6b"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,100,100,0.8)"; }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/>
-                    <line x1="21" y1="12" x2="9" y2="12"/>
-                  </svg>
-                  Sair
+                  <SignOut size={14} weight="duotone" /> Sair
                 </button>
               </form>
             </div>
@@ -153,7 +128,6 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
         )}
       </div>
 
-      {/* Modal editar perfil */}
       {editOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setEditOpen(false)} />

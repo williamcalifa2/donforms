@@ -240,7 +240,7 @@ export function KanbanBoard({ submissions: initialSubs, fields }: Props) {
     return map;
   });
 
-  // Calcula MQL por campo de faturamento (campo com isMqlField: true)
+  // Calcula MQL por campo de qualificação (campo com isMqlField: true)
   const subsWithMql = initialSubs.map(s => ({
     ...s,
     isMql: isMqlByField(s.answers, fields),
@@ -268,7 +268,7 @@ export function KanbanBoard({ submissions: initialSubs, fields }: Props) {
           style={{ background: "rgba(125,131,189,0.08)", border: "1px solid rgba(125,131,189,0.2)", color: "#CBCDE5" }}
         >
           <span style={{ fontSize: "16px" }}>💡</span>
-          <span>Configure o campo de faturamento em Configurações → Qualificação MQL para ver badges MQL aqui.</span>
+          <span>Configure o campo de qualificação em Configurações → Qualificação MQL para ver badges MQL aqui.</span>
         </div>
       )}
 

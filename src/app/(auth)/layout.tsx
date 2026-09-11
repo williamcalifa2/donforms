@@ -3,27 +3,28 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const Logo = () => (
+    <div
+      style={{
+        height: 36, width: 36, borderRadius: 10, flexShrink: 0,
+        background: "linear-gradient(135deg, #7c6ff7 0%, #a78bfa 100%)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "0 4px 14px rgba(124,111,247,0.45)",
+      }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+        <path d="M13 2L4.09 12.97A1 1 0 005 14.5h6.5L10 22l9.91-10.97A1 1 0 0019 10H12.5L13 2z" />
+      </svg>
+    </div>
+  );
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Painel esquerdo — branding */}
       <div className="hidden lg:flex flex-col justify-between bg-zinc-950 p-10 text-white">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-indigo-500 flex items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-            >
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-            </svg>
-          </div>
-          <span className="font-semibold text-lg">DonForms</span>
+        <div className="flex items-center gap-3">
+          <Logo />
+          <span className="font-semibold text-lg tracking-tight">DonForms</span>
         </div>
 
         <div className="space-y-4">
@@ -46,23 +47,9 @@ export default function AuthLayout({
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           {/* Logo mobile */}
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="h-8 w-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
-              >
-                <path d="M9 11l3 3L22 4" />
-                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-              </svg>
-            </div>
-            <span className="font-semibold text-lg">DonForms</span>
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <Logo />
+            <span className="font-semibold text-lg tracking-tight">DonForms</span>
           </div>
 
           {children}
