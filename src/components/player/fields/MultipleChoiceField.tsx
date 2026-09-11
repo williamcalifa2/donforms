@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
 
 interface Props {
   value: string;
@@ -12,12 +11,11 @@ interface Props {
 }
 
 export function MultipleChoiceField({ value, onChange, options, primaryColor, onEnter }: Props) {
-  // Teclas 1-9 selecionam opção, Enter avança
   const handleKey = useCallback((e: KeyboardEvent) => {
-    const num = parseInt(e.key);
-    if (!isNaN(num) && num >= 1 && num <= options.length) {
-      onChange(options[num - 1]);
-      return;
+    const code = e.key.toUpperCase();
+    if (code.length === 1 && code >= "A" && code <= "Z") {
+      const idx = code.charCodeAt(0) - 65;
+      if (idx < options.length) { onChange(options[idx]); return; }
     }
     if (e.key === "Enter" && value) onEnter();
   }, [options, value, onChange, onEnter]);
@@ -28,44 +26,106 @@ export function MultipleChoiceField({ value, onChange, options, primaryColor, on
   }, [handleKey]);
 
   return (
-    <div className="space-y-2.5">
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {options.map((opt, idx) => {
         const selected = value === opt;
+        const letter = String.fromCharCode(65 + idx);
         return (
           <button
             key={opt}
             type="button"
-            onClick={() => {
-              onChange(opt);
-              // Auto-avança após breve delay (UX Typeform)
-              setTimeout(onEnter, 350);
+            onClick={() => { onChange(opt); setTimeout(onEnter, 320); }}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "13px 16px",
+              borderRadius: 12,
+              border: selected
+                ? `1px solid ${primaryColor}66`
+                : "1px solid rgba(255,255,255,0.1)",
+              background: selected
+                ? `${primaryColor}12`
+                : "rgba(255,255,255,0.03)",
+              cursor: "pointer",
+              textAlign: "left",
+              transition: "all 0.15s ease",
+              outline: "none",
+              transform: selected ? "translateX(2px)" : "translateX(0)",
             }}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all duration-150",
-              "hover:border-current/60 hover:bg-current/5",
-              selected ? "border-current bg-current/10" : "border-current/20 bg-transparent"
-            )}
-            style={{ color: "inherit" }}
+            onMouseEnter={e => {
+              if (!selected) {
+                (e.currentTarget as HTMLButtonElement).style.border = `1px solid rgba(255,255,255,0.2)`;
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+              }
+            }}
+            onMouseLeave={e => {
+              if (!selected) {
+                (e.currentTarget as HTMLButtonElement).style.border = "1px solid rgba(255,255,255,0.1)";
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.03)";
+              }
+            }}
           >
-            {/* Letra da opção */}
-            <span
-              className={cn(
-                "h-7 w-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 border-2 transition-colors",
-                selected
-                  ? "border-transparent text-white"
-                  : "border-current/30 bg-transparent"
-              )}
-              style={selected ? { backgroundColor: primaryColor } : {}}
-            >
-              {String.fromCharCode(65 + idx)} {/* A, B, C… */}
+            {/* Letter tag */}
+            <span style={{
+              width: 22, height: 22,
+              borderRadius: 6,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 10, fontWeight: 700,
+              flexShrink: 0,
+              background: selected ? `${primaryColor}22` : "rgba(255,255,255,0.06)",
+              border: selected ? `1px solid ${primaryColor}44` : "1px solid rgba(255,255,255,0.08)",
+              color: selected ? primaryColor : "rgba(255,255,255,0.35)",
+              transition: "all 0.15s",
+              letterSpacing: "0.02em",
+            }}>
+              {letter}
             </span>
-            <span className="text-base">{opt}</span>
+
+            {/* Option text */}
+            <span style={{
+              fontSize: 15,
+              fontWeight: 400,
+              color: selected ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)",
+              lineHeight: 1.4,
+              flex: 1,
+              transition: "color 0.15s",
+            }}>
+              {opt}
+            </span>
+
+            {/* Check */}
+            {selected && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke={primaryColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                style={{ flexShrink: 0, opacity: 0.9 }}>
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            )}
           </button>
         );
       })}
-      <p className="text-xs opacity-40 mt-2">
-        Ou pressione <kbd className="font-mono bg-current/10 px-1 rounded">1</kbd>–
-        <kbd className="font-mono bg-current/10 px-1 rounded">{Math.min(options.length, 9)}</kbd>
+
+      {/* Keyboard hint */}
+      <p style={{
+        fontSize: 11, color: "rgba(255,255,255,0.22)",
+        marginTop: 4, display: "flex", alignItems: "center", gap: 4,
+      }}>
+        Ou pressione
+        <span style={{
+          fontFamily: "monospace",
+          background: "rgba(255,255,255,0.07)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 4, padding: "1px 5px", fontSize: 10,
+        }}>A</span>
+        –
+        <span style={{
+          fontFamily: "monospace",
+          background: "rgba(255,255,255,0.07)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 4, padding: "1px 5px", fontSize: 10,
+        }}>{String.fromCharCode(64 + Math.min(options.length, 26))}</span>
       </p>
     </div>
   );

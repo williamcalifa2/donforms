@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { FormEditor } from "@/components/editor/FormEditor";
@@ -39,5 +40,6 @@ export default async function EditFormPage({ params }: Props) {
 
   if (error || !form) notFound();
 
-  return <FormEditor form={form as Form} />;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.vercel.app";
+  return <FormEditor form={form as Form} appUrl={appUrl} />;
 }

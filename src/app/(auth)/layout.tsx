@@ -28,15 +28,15 @@ export default function AuthLayout({
 
         <div className="space-y-4">
           <blockquote className="text-xl font-medium leading-relaxed text-zinc-100">
-            &ldquo;A melhor ferramenta para criar formulários que as pessoas realmente respondem.&rdquo;
+            &ldquo;Formulários que qualificam leads antes de chegar no comercial.&rdquo;
           </blockquote>
           <p className="text-zinc-400 text-sm">
-            Conversacional • Personalizado • Alta conversão
+            Capture • Qualifique • Converta
           </p>
         </div>
 
         <div className="flex gap-6 text-zinc-500 text-xs">
-          <span>© 2025 DonForms</span>
+          <span>© 2026 DonForms</span>
           <a href="#" className="hover:text-zinc-300 transition-colors">Privacidade</a>
           <a href="#" className="hover:text-zinc-300 transition-colors">Termos</a>
         </div>

@@ -4,16 +4,17 @@
 
 @layer base {
   :root {
+    /* Light mode (fallback) */
     --background: 0 0% 100%;
     --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 239 84% 67%;      /* indigo-500 */
+    --primary: 238 100% 74%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
+    --secondary: 238 55% 57%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
     --accent: 220 14.3% 95.9%;
@@ -22,30 +23,31 @@
     --destructive-foreground: 0 0% 100%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 239 84% 67%;
-    --radius: 0.625rem;
+    --ring: 238 100% 74%;
+    --radius: 0.75rem;
   }
 
+  /* ── Pautta Design System — Dark tokens ── */
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 239 84% 67%;
+    --background: 230 35% 7%;           /* #0C0E18 — fundo principal */
+    --foreground: 220 23% 95%;          /* #EFF1F5 — texto principal */
+    --card: 230 30% 10%;                /* #121421 — card bg */
+    --card-foreground: 220 23% 95%;
+    --popover: 230 30% 10%;
+    --popover-foreground: 220 23% 95%;
+    --primary: 238 100% 74%;            /* #7B7BFF — roxo Pautta */
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 239 84% 67%;
+    --secondary: 238 55% 57%;           /* #5656C7 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 230 25% 15%;               /* nível muted */
+    --muted-foreground: 220 15% 65%;    /* #98A1B3 */
+    --accent: 230 25% 12%;
+    --accent-foreground: 220 23% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 20% 20%;              /* #292C3D */
+    --input: 230 20% 20%;
+    --ring: 238 100% 74%;
   }
 }
 
@@ -55,6 +57,36 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* ── Dashboard sidebar variables — Pautta palette ── */
+:root {
+  --sidebar-bg: #0E101B;                        /* hsl(230 30% 8%) */
+  --sidebar-border: rgba(41, 44, 61, 0.8);      /* hsl(230 20% 20%) */
+  --sidebar-text: rgba(239, 241, 245, 0.4);     /* foreground 40% */
+  --sidebar-text-active: rgba(239, 241, 245, 0.92);
+  --sidebar-hover: rgba(41, 44, 61, 0.5);
+  --sidebar-active: rgba(123, 123, 255, 0.12);  /* primary 12% */
+  --sidebar-width: 220px;
+  --main-bg: #0C0E18;                           /* hsl(230 35% 7%) */
+  --card-bg: #121421;                           /* hsl(230 30% 10%) */
+  --card-border: rgba(41, 44, 61, 0.6);
+  --gradient-primary: linear-gradient(135deg, hsl(238 100% 74%), hsl(238 55% 57%));
+  --shadow-elegant: 0 10px 30px -10px hsl(238 100% 74% / 0.2);
+}
+
+/* ── Form Player — Don theme ── */
+.don-player input,
+.don-player textarea {
+  color: #ffffff !important;
+  background: transparent !important;
+  caret-color: #7D83BD;
+}
+.don-player input::placeholder,
+.don-player textarea::placeholder {
+  color: rgba(125, 131, 189, 0.45) !important;
+  opacity: 1;
 }

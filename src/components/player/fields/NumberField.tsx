@@ -25,8 +25,23 @@ export function NumberField({ value, onChange, placeholder, min, max, onEnter }:
       placeholder={placeholder || "0"}
       min={min}
       max={max}
-      className="w-full bg-transparent border-b-2 border-current/30 pb-2 text-xl outline-none transition-colors placeholder:text-current/30 focus:border-current/60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-      style={{ color: "inherit" }}
+      style={{
+        width: "100%",
+        background: "transparent",
+        border: "none",
+        borderBottom: "1px solid rgba(125,131,189,0.2)",
+        outline: "none",
+        paddingBottom: "10px",
+        fontSize: "26px",
+        fontWeight: 400,
+        fontFamily: "inherit",
+        color: "#ffffff",
+        transition: "border-color 0.2s",
+        appearance: "textfield",
+      }}
+      onFocus={e => { e.currentTarget.style.borderBottomColor = "rgba(125,131,189,0.5)"; }}
+      onBlur={e => { e.currentTarget.style.borderBottomColor = "rgba(125,131,189,0.2)"; }}
+      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
     />
   );
 }

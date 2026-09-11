@@ -22,8 +22,22 @@ export function ShortTextField({ value, onChange, placeholder, primaryColor, onE
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => e.key === "Enter" && onEnter()}
       placeholder={placeholder || "Digite sua resposta…"}
-      className="w-full bg-transparent border-b-2 border-current/30 pb-2 text-xl outline-none transition-colors placeholder:text-current/30 focus:border-current/60"
-      style={{ color: "inherit" }}
+      style={{
+        width: "100%",
+        background: "transparent",
+        border: "none",
+        borderBottom: `1px solid ${primaryColor}26`,
+        outline: "none",
+        paddingBottom: "10px",
+        fontSize: "26px",
+        fontWeight: 400,
+        fontFamily: "inherit",
+        color: "#ffffff",
+        transition: "border-color 0.2s",
+      }}
+      onFocus={e => { e.currentTarget.style.borderBottomColor = `${primaryColor}66`; }}
+      onBlur={e => { e.currentTarget.style.borderBottomColor = `${primaryColor}26`; }}
+      className="placeholder-style"
     />
   );
 }

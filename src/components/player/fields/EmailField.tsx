@@ -21,8 +21,21 @@ export function EmailField({ value, onChange, placeholder, onEnter }: Props) {
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => e.key === "Enter" && onEnter()}
       placeholder={placeholder || "seuemail@exemplo.com"}
-      className="w-full bg-transparent border-b-2 border-current/30 pb-2 text-xl outline-none transition-colors placeholder:text-current/30 focus:border-current/60"
-      style={{ color: "inherit" }}
+      style={{
+        width: "100%",
+        background: "transparent",
+        border: "none",
+        borderBottom: "1px solid rgba(125,131,189,0.2)",
+        outline: "none",
+        paddingBottom: "10px",
+        fontSize: "26px",
+        fontWeight: 400,
+        fontFamily: "inherit",
+        color: "#ffffff",
+        transition: "border-color 0.2s",
+      }}
+      onFocus={e => { e.currentTarget.style.borderBottomColor = "rgba(125,131,189,0.5)"; }}
+      onBlur={e => { e.currentTarget.style.borderBottomColor = "rgba(125,131,189,0.2)"; }}
     />
   );
 }
