@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { Form, SubmissionMetadata } from "@/types/database.types";
 
-// ── Rate limiter in-memory (por instância serverless) ─────────────────────────
-// 10 submissões por IP por minuto por form
-const _rateMap = new Map<string, { count: number; resetAt: number }>();
-
 function getIp(req: NextRequest): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
@@ -14,43 +10,40 @@ function getIp(req: NextRequest): string {
   );
 }
 
-function isRateLimited(ip: string, formId: string, limit = 10, windowMs = 60_000): boolean {
-  // Limpar entradas expiradas a cada 500 chamadas para evitar leak
-  if (_rateMap.size > 500) {
-    const now = Date.now();
-    for (const [k, v] of _rateMap) if (now > v.resetAt) _rateMap.delete(k);
-  }
-  const key = `${ip}:${formId}`;
-  const now = Date.now();
-  const entry = _rateMap.get(key);
-  if (!entry || now > entry.resetAt) {
-    _rateMap.set(key, { count: 1, resetAt: now + windowMs });
-    return false;
-  }
-  if (entry.count >= limit) return true; // bloqueado
-  entry.count++;
-  return false;
-}
-
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ formId: string }> }
 ) {
   const { formId } = await params;
 
-  // ── Rate limiting ─────────────────────────────────────────────────────────
   const ip = getIp(req);
-  if (isRateLimited(ip, formId)) {
-    return NextResponse.json(
-      { error: "Muitas tentativas. Aguarde um minuto e tente novamente." },
-      { status: 429, headers: { "Retry-After": "60" } }
-    );
-  }
-
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
-  const { answers, metadata }: { answers: Record<string, unknown>; metadata: SubmissionMetadata } = body;
+  const {
+    answers,
+    metadata,
+    _honeypot,
+    _startedAt,
+  }: {
+    answers: Record<string, unknown>;
+    metadata: SubmissionMetadata;
+    _honeypot?: string;
+    _startedAt?: number;
+  } = body;
+
+  // ── Anti-spam: honeypot ───────────────────────────────────────────────────
+  // Bot filled the hidden field → silently discard (return 200 to avoid detection)
+  if (_honeypot && _honeypot.trim() !== "") {
+    console.warn(`[spam] honeypot triggered — ip=${ip} form=${formId}`);
+    return NextResponse.json({ ok: true }); // fake success
+  }
+
+  // ── Anti-spam: timing (submitted in < 3 seconds = bot) ───────────────────
+  if (_startedAt && Date.now() - _startedAt < 3000) {
+    console.warn(`[spam] too fast — ip=${ip} form=${formId} ms=${Date.now() - _startedAt}`);
+    return NextResponse.json({ ok: true }); // fake success
+  }
 
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,6 +62,26 @@ export async function POST(
   }
 
   const settings = form.settings;
+
+  // ── Anti-spam: rate limit via DB (persists across serverless instances) ───
+  // Max 5 submissions per IP per form per hour
+  if (ip !== "unknown") {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await client
+      .from("submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("form_id", formId)
+      .gte("created_at", oneHourAgo)
+      .filter("metadata->>ip", "eq", ip);
+
+    if ((recentCount ?? 0) >= 5) {
+      console.warn(`[spam] rate limit hit — ip=${ip} form=${formId} count=${recentCount}`);
+      return NextResponse.json(
+        { error: "Muitas tentativas. Aguarde um momento e tente novamente." },
+        { status: 429, headers: { "Retry-After": "3600" } }
+      );
+    }
+  }
 
   // ── Verificar limite de respostas ─────────────────────────────────────────
   if (settings.maxResponses) {

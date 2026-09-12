@@ -1,7 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
+// Simple in-memory rate limit for uploads: 20 per IP per 10 min
+const _uploadMap = new Map<string, { count: number; resetAt: number }>();
+function uploadRateLimited(ip: string): boolean {
+  const now = Date.now();
+  if (_uploadMap.size > 200) { for (const [k, v] of _uploadMap) if (now > v.resetAt) _uploadMap.delete(k); }
+  const entry = _uploadMap.get(ip);
+  if (!entry || now > entry.resetAt) { _uploadMap.set(ip, { count: 1, resetAt: now + 600_000 }); return false; }
+  if (entry.count >= 20) return true;
+  entry.count++;
+  return false;
+}
+
 export async function POST(req: NextRequest) {
+  // Rate limit uploads by IP
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? "unknown";
+  if (uploadRateLimited(ip)) {
+    return NextResponse.json({ error: "Muitas tentativas. Tente novamente em alguns minutos." }, { status: 429 });
+  }
+
   try {
     const formData = await req.formData();
     const file      = formData.get("file")      as File   | null;

@@ -137,6 +137,8 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
   const [disqualifyData, setDisqualifyData] = useState<{ message?: string; url?: string } | null>(null);
   const sid = useRef(sessionId());
   const abandoned = useRef(false);
+  const startedAt = useRef<number | null>(null);   // when user began answering
+  const honeypot  = useRef<HTMLInputElement>(null); // hidden bait field
 
   const field = fields[current];
   const inputFields = fields.filter(f => f.type !== "statement");
@@ -193,6 +195,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
   }, [state]);
 
   const handleStart = useCallback(() => {
+    startedAt.current = Date.now();
     setState("playing");
     if (!preview) {
       fetch(`/api/forms/${formId}/event`, {
@@ -245,7 +248,12 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
         const metadata = { ...storedUtms, ...currentUtms, referrer: document.referrer || undefined, user_agent: navigator.userAgent };
         const res = await fetch(`/api/forms/${formId}/submit`, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers, metadata }),
+          body: JSON.stringify({
+            answers,
+            metadata,
+            _honeypot: honeypot.current?.value ?? "",
+            _startedAt: startedAt.current ?? 0,
+          }),
         });
         if (!res.ok) throw new Error((await res.json()).error ?? "Erro");
         if (metaPixelId && (window as unknown as Record<string, unknown>).fbq)
@@ -310,6 +318,17 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
         .df-player textarea:focus { outline: none; }
         .df-player * { box-sizing: border-box; }
       `}</style>
+
+      {/* Honeypot — invisible bait for bots; humans never see or fill this */}
+      <input
+        ref={honeypot}
+        type="text"
+        name="website"
+        autoComplete="off"
+        tabIndex={-1}
+        aria-hidden="true"
+        style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 1, height: 1, left: -9999 }}
+      />
 
       <div
         className="df-player don-player"
