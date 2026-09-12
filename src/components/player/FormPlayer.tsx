@@ -498,6 +498,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                 error={fieldError}
                 accentRgb={[r, g, b]}
                 textColor={textColor}
+                formId={formId}
               />
             )}
 

@@ -38,6 +38,7 @@ const FIELD_LABELS: Record<FieldType, string> = {
   yes_no:          "Sim ou não?",
   rating:          "Como você avalia?",
   statement:       "Texto de apresentação",
+  file_upload:     "Envie um arquivo",
 };
 
 const DEFAULT_FIELD = (type: FieldType): FormField => ({

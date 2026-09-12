@@ -16,7 +16,8 @@ export type FieldType =
   | "rating"
   | "statement"
   | "phone"
-  | "date";
+  | "date"
+  | "file_upload";
 
 export interface FieldCondition {
   /** ID do campo cujo valor dispara o salto */
@@ -53,6 +54,10 @@ export interface FormField {
   mqlQualifyingOptions?: string[];
   /** MQL: resposta que qualifica em yes_no ("sim" | "nao") */
   mqlYesQualifies?: boolean;
+  /** File upload: tipos aceitos ("image/*", "application/pdf", "*") */
+  accept?: string;
+  /** File upload: tamanho máximo em MB */
+  maxSizeMb?: number;
 }
 
 export interface FormSettings {

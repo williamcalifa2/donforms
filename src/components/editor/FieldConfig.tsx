@@ -15,12 +15,23 @@ const TYPE_LABELS: Record<FormField["type"], string> = {
   yes_no:          "Sim / Não",
   rating:          "Avaliação (estrelas)",
   statement:       "Declaração",
+  file_upload:     "Upload de arquivo",
 };
 
 // Tipos que não pedem placeholder
-const NO_PLACEHOLDER = new Set(["multiple_choice", "yes_no", "rating", "statement", "date"]);
+const NO_PLACEHOLDER = new Set(["multiple_choice", "yes_no", "rating", "statement", "date", "file_upload"]);
 // Tipos sem campo obrigatório (statement não tem input)
 const NO_REQUIRED = new Set(["statement"]);
+
+const FILE_ACCEPT_OPTIONS = [
+  { value: "*",               label: "Qualquer arquivo" },
+  { value: "image/*",         label: "Imagens (JPG, PNG, GIF…)" },
+  { value: "application/pdf", label: "PDF" },
+  { value: "image/*,application/pdf", label: "Imagens + PDF" },
+  { value: ".pdf,.doc,.docx,.xls,.xlsx", label: "Documentos Office + PDF" },
+];
+
+const FILE_SIZE_OPTIONS = [5, 10, 25, 50];
 
 interface Props {
   field: FormField;
@@ -146,6 +157,46 @@ export function FieldConfig({ field, index, allFields, onChange }: Props) {
               disabled={(field.options?.length ?? 0) >= 10}
               className="text-xs text-primary hover:underline disabled:opacity-40 disabled:no-underline"
             >+ Adicionar opção</button>
+          </div>
+        )}
+
+        {/* File upload: accept + max size */}
+        {field.type === "file_upload" && (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Tipos aceitos</label>
+              <div className="flex flex-col gap-1.5">
+                {FILE_ACCEPT_OPTIONS.map(opt => (
+                  <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="file-accept"
+                      checked={(field.accept ?? "*") === opt.value}
+                      onChange={() => onChange({ accept: opt.value })}
+                      className="accent-primary"
+                    />
+                    <span className="text-sm text-muted-foreground">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Tamanho máximo</label>
+              <div className="flex gap-2">
+                {FILE_SIZE_OPTIONS.map(mb => (
+                  <button
+                    key={mb}
+                    onClick={() => onChange({ maxSizeMb: mb })}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors",
+                      (field.maxSizeMb ?? 10) === mb
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "hover:bg-accent border-input"
+                    )}
+                  >{mb}MB</button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

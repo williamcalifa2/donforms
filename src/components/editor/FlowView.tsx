@@ -38,6 +38,7 @@ const FIELD_LABELS: Record<FieldType, string> = {
   yes_no:          "Sim ou não?",
   rating:          "Como você avalia?",
   statement:       "Texto de apresentação",
+  file_upload:     "Envie um arquivo",
 };
 
 function makeField(type: FieldType): FormField {
@@ -68,13 +69,14 @@ const TYPE_META: Record<string, { icon: string; label: string; color: string }> 
   yes_no:          { icon: "?",  label: "Sim / Não",    color: "#facc15" },
   rating:          { icon: "★",  label: "Avaliação",    color: "#fbbf24" },
   statement:       { icon: "✦",  label: "Declaração",   color: "#818cf8" },
+  file_upload:     { icon: "↑",  label: "Arquivo",      color: "#34d399" },
 };
 
 const SIDEBAR_GROUPS: { label: string; types: FieldType[] }[] = [
   { label: "Texto",    types: ["short_text", "long_text", "number", "date"] },
   { label: "Contato",  types: ["email", "phone"] },
   { label: "Escolha",  types: ["multiple_choice", "yes_no", "rating"] },
-  { label: "Extra",    types: ["statement"] },
+  { label: "Extra",    types: ["statement", "file_upload"] },
 ];
 
 // ─── Condition label (for edge labels) ────────────────────────────────────────

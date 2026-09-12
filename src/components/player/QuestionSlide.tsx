@@ -10,6 +10,7 @@ import { YesNoField } from "./fields/YesNoField";
 import { RatingField } from "./fields/RatingField";
 import { PhoneField } from "./fields/PhoneField";
 import { DateField } from "./fields/DateField";
+import { FileUploadField } from "./fields/FileUploadField";
 import type { FormField } from "@/types/database.types";
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
   error?: string;
   accentRgb: [number, number, number];
   textColor: string;
+  formId: string;
 }
 
 const variants = {
@@ -50,10 +52,11 @@ const variants = {
 
 const AUTO_ADVANCE_TYPES = new Set(["multiple_choice", "yes_no"]);
 const NO_OK_TYPES = new Set(["statement"]);
+const NO_ENTER_TYPES = new Set(["file_upload", "long_text", "multiple_choice", "yes_no", "rating", "date"]);
 
 export function QuestionSlide({
   field, index, value, onChange, onNext, onPrev, isLast,
-  primaryColor, direction, error, accentRgb, textColor,
+  primaryColor, direction, error, accentRgb, textColor, formId,
 }: Props) {
   const isStatement = field.type === "statement";
   const showOK = !AUTO_ADVANCE_TYPES.has(field.type) && !NO_OK_TYPES.has(field.type);
@@ -174,6 +177,15 @@ export function QuestionSlide({
           )}
           {field.type === "rating" && (
             <RatingField value={value} onChange={onChange} primaryColor={primaryColor} scale={field.scale ?? 5} />
+          )}
+          {field.type === "file_upload" && (
+            <FileUploadField
+              value={value} onChange={onChange}
+              primaryColor={primaryColor} accentRgb={accentRgb}
+              formId={formId} fieldId={field.id}
+              accept={field.accept ?? "*"}
+              maxSizeMb={field.maxSizeMb ?? 10}
+            />
           )}
         </motion.div>
       )}
