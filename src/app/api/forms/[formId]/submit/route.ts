@@ -25,11 +25,13 @@ export async function POST(
     metadata,
     _honeypot,
     _startedAt,
+    _consentGiven,
   }: {
     answers: Record<string, unknown>;
     metadata: SubmissionMetadata;
     _honeypot?: string;
     _startedAt?: number;
+    _consentGiven?: boolean;
   } = body;
 
   // ── Anti-spam: honeypot ───────────────────────────────────────────────────
@@ -62,6 +64,11 @@ export async function POST(
   }
 
   const settings = form.settings;
+
+  // ── LGPD: require explicit consent when enabled ───────────────────────────
+  if (settings.lgpdEnabled && !_consentGiven) {
+    return NextResponse.json({ error: "Consentimento obrigatório." }, { status: 422 });
+  }
 
   // ── Anti-spam: rate limit via DB (persists across serverless instances) ───
   // Max 5 submissions per IP per form per hour
@@ -101,7 +108,11 @@ export async function POST(
 
   // ── Inserir submissão ─────────────────────────────────────────────────────
   // IP sempre do servidor (não confiar no cliente)
-  const safeMetadata = { ...metadata, ip };
+  // Anonimizar IP se configurado (LGPD): trunca para /24 → "x.x.x.0"
+  const storedIp = settings.anonymizeIp
+    ? ip.split(".").slice(0, 3).join(".") + ".0"
+    : ip;
+  const safeMetadata = { ...metadata, ip: storedIp };
   const { error: insertError } = await client
     .from("submissions")
     .insert({ form_id: formId, answers, metadata: safeMetadata });

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, ChartBar, ChartLineUp, GearSix } from "@phosphor-icons/react";
+import { FileText, ChartBar, ChartLineUp, GearSix, UsersThree } from "@phosphor-icons/react";
 
 const NAV_MAIN = [
   { href: "/dashboard",           label: "Formulários",   Icon: FileText    },
@@ -11,7 +11,8 @@ const NAV_MAIN = [
 ];
 
 const NAV_SETTINGS = [
-  { href: "/dashboard/settings",  label: "Configurações", Icon: GearSix     },
+  { href: "/dashboard/settings/team", label: "Equipe",        Icon: UsersThree },
+  { href: "/dashboard/settings",      label: "Configurações", Icon: GearSix    },
 ];
 
 function NavItem({ href, label, Icon, exact = false }: {

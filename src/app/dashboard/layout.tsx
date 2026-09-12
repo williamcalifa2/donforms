@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { SidebarUserMenu } from "@/components/dashboard/SidebarUserMenu";
 import { SidebarNav } from "@/components/dashboard/SidebarNav";
+import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
 import type { Metadata } from "next";
 import type { Profile } from "@/types/database.types";
 
@@ -45,9 +46,44 @@ export default async function DashboardLayout({
 
   const displayName = profile?.name ?? user.email?.split("@")[0] ?? "Usuário";
   const email = profile?.email ?? user.email ?? "";
-  const workspaceName = profile?.workspace_name ?? "DonForms";
-  const workspaceLogo = profile?.workspace_logo_url ?? null;
+  const ownWorkspaceName = profile?.workspace_name ?? "DonForms";
+  const ownWorkspaceLogo = profile?.workspace_logo_url ?? null;
   const initials = displayName.split(" ").slice(0, 2).map((n: string) => n[0]).join("").toUpperCase();
+
+  // ── Workspace memberships (for switcher) ───────────────────
+  const { data: memberships } = await client
+    .from("workspace_members")
+    .select("workspace_id, role")
+    .eq("user_id", user.id);
+
+  // Fetch owner profiles for each workspace the user is a member of
+  type WsOption = { id: string; name: string; logoUrl: string | null; role: string | null };
+  const memberWorkspaces: WsOption[] = await Promise.all(
+    (memberships ?? []).map(async (m: { workspace_id: string; role: string }) => {
+      const { data: ownerProf } = await client
+        .from("profiles")
+        .select("name, workspace_name, workspace_logo_url")
+        .eq("id", m.workspace_id)
+        .single();
+      return {
+        id: m.workspace_id,
+        name: ownerProf?.workspace_name ?? ownerProf?.name ?? "Workspace",
+        logoUrl: ownerProf?.workspace_logo_url ?? null,
+        role: m.role,
+      };
+    })
+  );
+
+  const ownOption: WsOption = { id: user.id, name: ownWorkspaceName, logoUrl: ownWorkspaceLogo, role: null };
+  const allWorkspaces: WsOption[] = [ownOption, ...memberWorkspaces];
+
+  // Determine active workspace from cookie
+  const cookieStore = await cookies();
+  const wid = cookieStore.get("_df_wid")?.value ?? user.id;
+  const activeWs = allWorkspaces.find(w => w.id === wid) ?? ownOption;
+
+  const workspaceName = activeWs.name;
+  const workspaceLogo = activeWs.logoUrl;
 
   return (
     <div className="dark flex min-h-screen text-foreground bg-background">
@@ -60,40 +96,13 @@ export default async function DashboardLayout({
           borderRight: "1px solid var(--sidebar-border)",
         }}
       >
-        {/* Workspace */}
-        <Link
-          href="/dashboard"
-          className="px-4 h-14 flex items-center gap-2.5 shrink-0 transition-opacity hover:opacity-75"
+        {/* Workspace switcher */}
+        <div
+          className="px-4 h-14 flex items-center shrink-0"
           style={{ borderBottom: "1px solid var(--sidebar-border)" }}
         >
-          {workspaceLogo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={workspaceLogo} alt={workspaceName}
-              className="h-7 w-7 rounded-lg object-cover flex-shrink-0" />
-          ) : (
-            <div
-              className="h-7 w-7 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-              style={{
-                background: "var(--gradient-primary)",
-                boxShadow: "0 2px 8px var(--accent-glow)",
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
-                <path d="M13 2L4.09 12.97A1 1 0 005 14.5h6.5L10 22l9.91-10.97A1 1 0 0019 10H12.5L13 2z"/>
-              </svg>
-            </div>
-          )}
-          <div className="flex flex-col min-w-0">
-            <span className="text-[13px] font-700 leading-tight truncate"
-              style={{ color: "var(--sidebar-text-active)", fontWeight: 700 }}>
-              {workspaceName}
-            </span>
-            <span className="text-[10px] leading-tight"
-              style={{ color: "var(--text-tertiary)" }}>
-              Workspace
-            </span>
-          </div>
-        </Link>
+          <WorkspaceSwitcher current={activeWs} options={allWorkspaces} />
+        </div>
 
         {/* Nav */}
         <SidebarNav />

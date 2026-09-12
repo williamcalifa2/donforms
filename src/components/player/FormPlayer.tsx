@@ -6,7 +6,7 @@ import { extractUtms } from "@/lib/utils";
 import { QuestionSlide } from "./QuestionSlide";
 import type { FormField, FormSettings } from "@/types/database.types";
 
-type PlayerState = "intro" | "playing" | "submitting" | "done" | "error" | "disqualified";
+type PlayerState = "intro" | "playing" | "consent" | "submitting" | "done" | "error" | "disqualified";
 
 interface Props {
   formId: string;
@@ -128,6 +128,185 @@ function CircularProgress({ progress, color, step, total }: { progress: number; 
   );
 }
 
+// ── Consent Screen (LGPD/GDPR) ───────────────────────────────────────────────
+function ConsentScreen({
+  primaryColor, accentRgb, textColor, lgpdText, lgpdPolicyUrl, onConfirm, onBack,
+}: {
+  primaryColor: string;
+  accentRgb: [number, number, number];
+  textColor: string;
+  lgpdText?: string;
+  lgpdPolicyUrl?: string;
+  onConfirm: () => void;
+  onBack: () => void;
+}) {
+  const [checked, setChecked] = useState(false);
+  const [r, g, b] = accentRgb;
+  const dark = (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+  const checkBg = checked ? primaryColor : "transparent";
+  const checkBorder = checked ? primaryColor : `rgba(${dark ? "255,255,255" : "0,0,0"},0.25)`;
+
+  return (
+    <motion.div
+      key="consent"
+      initial={{ opacity: 0, y: 28, filter: "blur(4px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        width: "100%", maxWidth: 600,
+        padding: "0 32px",
+        display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0,
+      }}
+    >
+      {/* Shield icon */}
+      <motion.div
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.1, type: "spring", stiffness: 260, damping: 22 }}
+        style={{
+          width: 52, height: 52, borderRadius: 14,
+          background: `rgba(${r},${g},${b},0.12)`,
+          border: `1px solid rgba(${r},${g},${b},0.2)`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: 28,
+        }}
+      >
+        <svg viewBox="0 0 24 24" fill="none" width="26" height="26">
+          <path
+            d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.33C17.25 22.15 21 17.25 21 12V7L12 2z"
+            stroke={primaryColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+          />
+          <path d="M9 12l2 2 4-4" stroke={primaryColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </motion.div>
+
+      {/* Heading */}
+      <motion.h2
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+        style={{
+          fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 900,
+          lineHeight: 1.1, letterSpacing: "-0.5px",
+          color: textColor, marginBottom: 14,
+        }}
+      >
+        Sua privacidade importa
+      </motion.h2>
+
+      {/* Consent text */}
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        style={{ fontSize: 16, lineHeight: 1.7, opacity: 0.65, marginBottom: 28, maxWidth: 480 }}
+      >
+        {lgpdText ?? "Ao enviar este formulário, você concorda com o tratamento dos seus dados pessoais de acordo com a Lei Geral de Proteção de Dados (LGPD) e demais legislações aplicáveis."}
+        {lgpdPolicyUrl && (
+          <>
+            {" "}
+            <a
+              href={lgpdPolicyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: primaryColor, textDecoration: "underline", textUnderlineOffset: 3 }}
+            >
+              Leia nossa Política de Privacidade.
+            </a>
+          </>
+        )}
+      </motion.p>
+
+      {/* Checkbox */}
+      <motion.label
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.28, duration: 0.35 }}
+        style={{
+          display: "flex", alignItems: "flex-start", gap: 12,
+          cursor: "pointer", marginBottom: 36,
+          userSelect: "none",
+        }}
+      >
+        <div
+          onClick={() => setChecked(v => !v)}
+          style={{
+            width: 22, height: 22, borderRadius: 6, flexShrink: 0, marginTop: 1,
+            background: checkBg,
+            border: `2px solid ${checkBorder}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background 0.2s, border-color 0.2s",
+            cursor: "pointer",
+          }}
+        >
+          {checked && (
+            <svg viewBox="0 0 12 12" fill="none" width="12" height="12">
+              <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </div>
+        <span
+          onClick={() => setChecked(v => !v)}
+          style={{ fontSize: 15, lineHeight: 1.5, opacity: checked ? 0.9 : 0.55, transition: "opacity 0.2s" }}
+        >
+          Concordo com o tratamento dos meus dados pessoais conforme descrito acima.
+        </span>
+      </motion.label>
+
+      {/* Buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.34, duration: 0.35 }}
+        style={{ display: "flex", gap: 12, alignItems: "center" }}
+      >
+        <button
+          onClick={onConfirm}
+          disabled={!checked}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "13px 26px", borderRadius: 12,
+            background: checked ? primaryColor : `rgba(${r},${g},${b},0.3)`,
+            color: "#fff",
+            fontSize: 16, fontWeight: 700, fontFamily: "inherit",
+            border: "none",
+            cursor: checked ? "pointer" : "not-allowed",
+            transition: "background 0.2s, box-shadow 0.2s, transform 0.15s",
+            boxShadow: checked ? `0 8px 24px rgba(${r},${g},${b},0.35)` : "none",
+            opacity: checked ? 1 : 0.6,
+          }}
+          onMouseEnter={e => { if (checked) { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.03)"; }}}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+        >
+          Confirmar e enviar
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+
+        <button
+          onClick={onBack}
+          style={{
+            padding: "13px 20px", borderRadius: 12,
+            background: "transparent",
+            color: textColor,
+            fontSize: 15, fontWeight: 600, fontFamily: "inherit",
+            border: `1px solid rgba(${r},${g},${b},0.18)`,
+            cursor: "pointer",
+            opacity: 0.6,
+            transition: "opacity 0.2s",
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.6"; }}
+        >
+          Voltar
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export function FormPlayer({ formId, title, fields, settings, preview = false }: Props) {
   const [state, setState] = useState<PlayerState>("intro");
   const [current, setCurrent] = useState(0);
@@ -239,6 +418,8 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
 
     if (next === "submit" || (typeof next === "number" && next >= fields.length)) {
       if (preview) { setState("done"); return; }
+      // If LGPD consent is required, show consent screen before submitting
+      if (settings.lgpdEnabled) { setState("consent"); return; }
       setState("submitting");
       try {
         const url = new URL(window.location.href);
@@ -277,6 +458,43 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
     setDirection(1);
     setCurrent(next as number);
   }, [current, fields, answers, validate, formId, preview, metaPixelId, googleTagId, redirectUrl]);
+
+  // Called from consent screen after checkbox is ticked
+  const doSubmit = useCallback(async () => {
+    setState("submitting");
+    try {
+      const url = new URL(window.location.href);
+      const currentUtms = extractUtms(url);
+      let storedUtms: Record<string, string> = {};
+      try { const raw = sessionStorage.getItem("_df_utms"); if (raw) storedUtms = JSON.parse(raw); } catch { /* */ }
+      const metadata = { ...storedUtms, ...currentUtms, referrer: document.referrer || undefined, user_agent: navigator.userAgent };
+      const res = await fetch(`/api/forms/${formId}/submit`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers,
+          metadata,
+          _honeypot: honeypot.current?.value ?? "",
+          _startedAt: startedAt.current ?? 0,
+          _consentGiven: true,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erro");
+      if (metaPixelId && (window as unknown as Record<string, unknown>).fbq)
+        (window as unknown as { fbq: (...a: unknown[]) => void }).fbq("track", "Lead");
+      if (googleTagId && (window as unknown as Record<string, unknown>).gtag)
+        (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "form_submit", { form_id: formId });
+      fetch(`/api/forms/${formId}/event`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "complete", session_id: sid.current }),
+      }).catch(() => null);
+      abandoned.current = true;
+      setState("done");
+      if (redirectUrl) {
+        const safeUrl = /^https?:\/\//i.test(redirectUrl) ? redirectUrl : `https://${redirectUrl}`;
+        setTimeout(() => { window.location.href = safeUrl; }, 2500);
+      }
+    } catch { setState("error"); }
+  }, [formId, answers, metaPixelId, googleTagId, redirectUrl]);
 
   const handlePrev = useCallback(() => {
     if (current === 0) return;
@@ -518,6 +736,19 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                 accentRgb={[r, g, b]}
                 textColor={textColor}
                 formId={formId}
+              />
+            )}
+
+            {/* CONSENT SCREEN */}
+            {state === "consent" && (
+              <ConsentScreen
+                primaryColor={primaryColor}
+                accentRgb={[r, g, b]}
+                textColor={textColor}
+                lgpdText={settings.lgpdText ?? undefined}
+                lgpdPolicyUrl={settings.lgpdPolicyUrl ?? undefined}
+                onConfirm={doSubmit}
+                onBack={() => setState("playing")}
               />
             )}
 

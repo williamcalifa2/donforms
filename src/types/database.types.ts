@@ -82,6 +82,42 @@ export interface FormSettings {
   utmDisplayParam?: string | null;
   /** @deprecated MQL agora configurado nos campos (isMqlField) */
   mqlThreshold?: number | null;
+  /** LGPD/GDPR: exibir caixa de consentimento antes de enviar */
+  lgpdEnabled?: boolean;
+  /** LGPD/GDPR: texto do consentimento */
+  lgpdText?: string | null;
+  /** LGPD/GDPR: link para a política de privacidade */
+  lgpdPolicyUrl?: string | null;
+  /** LGPD/GDPR: anonimizar IP antes de armazenar */
+  anonymizeIp?: boolean;
+  /** LGPD/GDPR: reter dados por N dias (0 = indefinido) */
+  retentionDays?: number | null;
+}
+
+export type WorkspaceRole = "admin" | "member" | "viewer";
+
+export interface WorkspaceMember {
+  workspace_id: string;
+  user_id: string;
+  role: WorkspaceRole;
+  invited_by: string | null;
+  joined_at: string;
+}
+
+export interface WorkspaceInvitation {
+  id: string;
+  workspace_id: string;
+  email: string;
+  role: WorkspaceRole;
+  token: string;
+  invited_by: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+}
+
+export interface WorkspaceMemberWithProfile extends WorkspaceMember {
+  profile: { name: string; email: string; avatar_url: string | null };
 }
 
 export interface SubmissionMetadata {

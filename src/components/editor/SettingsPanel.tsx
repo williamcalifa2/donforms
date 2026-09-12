@@ -313,6 +313,66 @@ export function SettingsPanel({ settings, onChange, formUrl, fields = [] }: Prop
         );
       })()}
 
+      {/* ── LGPD / GDPR ───────────────────────────────────────── */}
+      <Section title="LGPD / Privacidade">
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={settings.lgpdEnabled ?? false}
+            onChange={e => onChange({ lgpdEnabled: e.target.checked })}
+            className="rounded accent-primary"
+          />
+          <span className="text-sm font-medium">Exigir consentimento antes de enviar</span>
+        </label>
+
+        {settings.lgpdEnabled && (
+          <div className="space-y-3 pl-1">
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Texto do consentimento</label>
+              <textarea
+                rows={3}
+                value={settings.lgpdText ?? ""}
+                onChange={e => onChange({ lgpdText: e.target.value || null })}
+                placeholder="Ao enviar este formulário, você concorda com o tratamento dos seus dados pessoais conforme nossa Política de Privacidade."
+                className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground resize-none"
+              />
+            </div>
+            <Input
+              label="URL da Política de Privacidade"
+              value={settings.lgpdPolicyUrl ?? ""}
+              onChange={e => onChange({ lgpdPolicyUrl: e.target.value || null })}
+              placeholder="https://suaempresa.com.br/privacidade"
+              type="url"
+            />
+          </div>
+        )}
+
+        <label className="flex items-center gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={settings.anonymizeIp ?? false}
+            onChange={e => onChange({ anonymizeIp: e.target.checked })}
+            className="rounded accent-primary"
+          />
+          <span className="text-sm">Anonimizar IP (armazena apenas os 3 primeiros octetos)</span>
+        </label>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Retenção de dados (dias)</label>
+          <input
+            type="number"
+            min={1}
+            value={settings.retentionDays ?? ""}
+            onChange={e => onChange({ retentionDays: e.target.value ? Number(e.target.value) : null })}
+            placeholder="Indefinido"
+            className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Respostas mais antigas que este prazo serão removidas automaticamente pelo job de limpeza diário.
+          </p>
+        </div>
+      </Section>
+
       {/* ── Controle de acesso ────────────────────────────────── */}
       <Section title="Controle de acesso">
         <div className="space-y-1.5">
