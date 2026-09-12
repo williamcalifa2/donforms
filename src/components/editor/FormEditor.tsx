@@ -368,7 +368,7 @@ export function FormEditor({ form, appUrl }: Props) {
               onReorder={reorderField}
             />
           ) : (
-            <SettingsPanel settings={settings} onChange={updateSettings} formUrl={`${appUrl}/f/${form.slug}`} fields={fields} />
+            <SettingsPanel settings={settings} onChange={updateSettings} formUrl={`${appUrl}/f/${form.slug}`} formId={form.id} fields={fields} />
           )}
         </aside>
 

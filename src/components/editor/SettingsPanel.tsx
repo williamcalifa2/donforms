@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
-import type { FormField, FormSettings } from "@/types/database.types";
+import type { FormField, FormSettings, WebhookLog } from "@/types/database.types";
 
 const PRESET_COLORS = [
   "#7D83BD", "#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316",
@@ -26,7 +26,181 @@ interface Props {
   settings: FormSettings;
   onChange: (patch: Partial<FormSettings>) => void;
   formUrl: string;
+  formId: string;
   fields?: FormField[];
+}
+
+// ── WebhookSection ────────────────────────────────────────────────────────
+function WebhookSection({
+  settings, onChange, formId,
+}: {
+  settings: FormSettings;
+  onChange: (patch: Partial<FormSettings>) => void;
+  formId: string;
+}) {
+  const [testState, setTestState] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [testResult, setTestResult] = useState<{ statusCode: number | null; durationMs: number; errorMsg: string | null } | null>(null);
+  const [logs, setLogs] = useState<WebhookLog[] | null>(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [extraUrls, setExtraUrls] = useState<string[]>(settings.webhookUrls ?? []);
+  const [newUrl, setNewUrl] = useState("");
+
+  const syncExtra = useCallback((urls: string[]) => {
+    setExtraUrls(urls);
+    onChange({ webhookUrls: urls.length ? urls : null });
+  }, [onChange]);
+
+  async function runTest() {
+    setTestState("loading");
+    setTestResult(null);
+    const res = await fetch(`/api/forms/${formId}/webhook-test`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ webhookUrl: settings.webhookUrl }),
+    });
+    const data = await res.json();
+    setTestState(data.ok ? "ok" : "error");
+    setTestResult({ statusCode: data.statusCode, durationMs: data.durationMs, errorMsg: data.errorMsg });
+  }
+
+  async function loadLogs() {
+    setLogsLoading(true);
+    const res = await fetch(`/api/forms/${formId}/webhook-logs`);
+    const data = await res.json();
+    setLogs(data.logs ?? []);
+    setLogsLoading(false);
+  }
+
+  function addExtraUrl() {
+    const url = newUrl.trim();
+    if (!url || extraUrls.includes(url)) return;
+    syncExtra([...extraUrls, url]);
+    setNewUrl("");
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Primary URL */}
+      <Input
+        label="Webhook URL principal"
+        value={settings.webhookUrl ?? ""}
+        onChange={(e) => onChange({ webhookUrl: e.target.value || null })}
+        placeholder="https://hook.eu1.make.com/..."
+        type="url"
+      />
+
+      {/* Test button */}
+      {settings.webhookUrl && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={runTest}
+            disabled={testState === "loading"}
+            className="text-[11px] font-medium px-3 py-1.5 rounded-md transition-colors"
+            style={{
+              background: "rgba(108,99,255,0.12)",
+              color: "#a5a0ff",
+              border: "1px solid rgba(108,99,255,0.2)",
+              cursor: testState === "loading" ? "not-allowed" : "pointer",
+              opacity: testState === "loading" ? 0.6 : 1,
+            }}
+          >
+            {testState === "loading" ? "Enviando…" : "↗ Enviar teste"}
+          </button>
+
+          {testResult && (
+            <span className="text-[11px]" style={{ color: testState === "ok" ? "#34d399" : "#f87171" }}>
+              {testState === "ok"
+                ? `✓ ${testResult.statusCode} · ${testResult.durationMs}ms`
+                : `✗ ${testResult.errorMsg ?? `HTTP ${testResult.statusCode}`}`}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Extra webhook URLs */}
+      <div className="space-y-2">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">URLs adicionais</p>
+        {extraUrls.map((url, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <span className="text-[11px] truncate flex-1" style={{ color: "rgba(255,255,255,0.5)" }}>{url}</span>
+            <button
+              onClick={() => syncExtra(extraUrls.filter((_, j) => j !== i))}
+              className="text-[13px] shrink-0"
+              style={{ color: "rgba(255,255,255,0.25)", background: "none", border: "none", cursor: "pointer" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.25)"; }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <div className="flex gap-1.5">
+          <input
+            type="url"
+            placeholder="https://..."
+            value={newUrl}
+            onChange={e => setNewUrl(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addExtraUrl(); } }}
+            className="flex-1 h-8 rounded-md border border-input bg-background text-foreground px-2.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
+          />
+          <button
+            onClick={addExtraUrl}
+            disabled={!newUrl.trim()}
+            className="h-8 px-2.5 rounded-md text-[11px] font-medium"
+            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer" }}
+          >
+            + Add
+          </button>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        POST com as respostas em JSON. Conecta com n8n, Zapier, Make, RD Station.
+      </p>
+
+      {/* Logs toggle */}
+      <div>
+        <button
+          onClick={() => { if (!logs) loadLogs(); else setLogs(null); }}
+          className="text-[11px]"
+          style={{ color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
+          {logs ? "▲ Ocultar logs" : "▼ Ver últimos logs"}
+        </button>
+
+        {logsLoading && <p className="text-[11px] text-muted-foreground mt-2">Carregando…</p>}
+
+        {logs && !logsLoading && (
+          <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+            {logs.length === 0 && (
+              <p className="text-[11px] text-muted-foreground">Nenhum log ainda.</p>
+            )}
+            {logs.map(log => (
+              <div key={log.id} className="flex items-center gap-2 py-1 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                <span style={{ color: log.ok ? "#34d399" : "#f87171", fontSize: 10, minWidth: 8 }}>
+                  {log.ok ? "✓" : "✗"}
+                </span>
+                {log.is_test && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(251,191,36,0.1)", color: "#fbbf24" }}>
+                    teste
+                  </span>
+                )}
+                <span className="text-[10px] truncate flex-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  {new URL(log.url).hostname}
+                </span>
+                <span className="text-[10px] shrink-0" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  {log.status_code ?? "—"} · {log.duration_ms ?? "—"}ms
+                </span>
+                <span className="text-[10px] shrink-0" style={{ color: "rgba(255,255,255,0.2)" }}>
+                  {new Date(log.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -38,7 +212,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export function SettingsPanel({ settings, onChange, formUrl, fields = [] }: Props) {
+export function SettingsPanel({ settings, onChange, formUrl, formId, fields = [] }: Props) {
   const [utmSource, setUtmSource] = useState("");
   const [utmMedium, setUtmMedium] = useState("");
   const [utmCampaign, setUtmCampaign] = useState("");
@@ -269,16 +443,7 @@ export function SettingsPanel({ settings, onChange, formUrl, fields = [] }: Prop
         <p className="text-[11px] text-muted-foreground -mt-1">
           Recebe um email a cada nova resposta. Requer <code className="bg-muted px-1 rounded text-[10px]">RESEND_API_KEY</code> no servidor.
         </p>
-        <Input
-          label="Webhook URL"
-          value={settings.webhookUrl ?? ""}
-          onChange={(e) => onChange({ webhookUrl: e.target.value || null })}
-          placeholder="https://hook.eu1.make.com/..."
-          type="url"
-        />
-        <p className="text-[11px] text-muted-foreground -mt-1">
-          POST com as respostas em JSON. Conecta com n8n, Zapier, Make.
-        </p>
+        <WebhookSection settings={settings} onChange={onChange} formId={formId} />
       </Section>
 
       {/* ── Qualificação MQL (status) ─────────────────────────── */}

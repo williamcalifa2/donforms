@@ -161,8 +161,13 @@ export async function POST(
     }).catch(() => null); // não quebra o fluxo se email falhar
   }
 
-  // ── Webhook ───────────────────────────────────────────────────────────────
-  if (settings.webhookUrl) {
+  // ── Webhook(s) ────────────────────────────────────────────────────────────
+  const allWebhookUrls = [
+    ...(settings.webhookUrl ? [settings.webhookUrl] : []),
+    ...(settings.webhookUrls ?? []),
+  ].filter(Boolean);
+
+  if (allWebhookUrls.length > 0) {
     // Monta payload flat: { "Nome": "João", "Email": "...", "Telefone": "..." }
     const labeledAnswers: Record<string, unknown> = {};
     for (const field of form.fields) {
@@ -179,26 +184,54 @@ export async function POST(
       return entry ? String(entry[1]) : undefined;
     };
 
-    await fetch(settings.webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        // Campos flat por label — compatível com Clint e maioria dos CRMs
-        ...labeledAnswers,
-        // Aliases comuns para CRMs
-        name: findByKeywords(["nome", "name"]),
-        email: findByKeywords(["email", "e-mail"]),
-        phone: findByKeywords(["telefone", "phone", "celular", "whatsapp"]),
-        // Metadados
-        utm_source: metadata?.utm_source,
-        utm_medium: metadata?.utm_medium,
-        utm_campaign: metadata?.utm_campaign,
-        // Estrutura completa para debug/Make.com
-        _form_id: formId,
-        _form_title: form.title,
-        _submitted_at: new Date().toISOString(),
-      }),
-    }).catch(() => null);
+    const webhookPayload = {
+      // Campos flat por label — compatível com Clint e maioria dos CRMs
+      ...labeledAnswers,
+      // Aliases comuns para CRMs
+      name: findByKeywords(["nome", "name"]),
+      email: findByKeywords(["email", "e-mail"]),
+      phone: findByKeywords(["telefone", "phone", "celular", "whatsapp"]),
+      // Metadados
+      utm_source: metadata?.utm_source,
+      utm_medium: metadata?.utm_medium,
+      utm_campaign: metadata?.utm_campaign,
+      // Estrutura completa para debug/Make.com
+      _form_id: formId,
+      _form_title: form.title,
+      _submitted_at: new Date().toISOString(),
+    };
+
+    // Fire all webhooks in parallel, log each result
+    await Promise.all(allWebhookUrls.map(async (url) => {
+      const t0 = Date.now();
+      let statusCode: number | null = null;
+      let ok = false;
+      let errorMsg: string | null = null;
+      try {
+        const wRes = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookPayload),
+          signal: AbortSignal.timeout(10_000),
+        });
+        statusCode = wRes.status;
+        ok = wRes.ok;
+        if (!ok) errorMsg = `HTTP ${statusCode}`;
+      } catch (err) {
+        errorMsg = err instanceof Error ? err.message : "Network error";
+      }
+      // Log to webhook_logs (best-effort, don't block response)
+      client.from("webhook_logs").insert({
+        form_id: formId,
+        submission_id: null, // submission ID not readily available here
+        url,
+        status_code: statusCode,
+        ok,
+        error_msg: errorMsg,
+        duration_ms: Date.now() - t0,
+        is_test: false,
+      }).then(() => null).catch(() => null);
+    }));
   }
 
   return NextResponse.json({ ok: true });

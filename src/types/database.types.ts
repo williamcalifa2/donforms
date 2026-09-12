@@ -72,8 +72,10 @@ export interface FormSettings {
   googleTagId?: string | null;
   /** Email para notificação de nova resposta */
   notificationEmail?: string | null;
-  /** Webhook URL — POST com answers ao submeter */
+  /** Webhook URL primária — POST com answers ao submeter */
   webhookUrl?: string | null;
+  /** Webhooks adicionais (além da URL primária) */
+  webhookUrls?: string[] | null;
   /** Fechar formulário após N respostas */
   maxResponses?: number | null;
   /** Fechar formulário após esta data (ISO) */
@@ -95,6 +97,19 @@ export interface FormSettings {
 }
 
 export type WorkspaceRole = "admin" | "member" | "viewer";
+
+export interface WebhookLog {
+  id: string;
+  form_id: string;
+  submission_id: string | null;
+  url: string;
+  status_code: number | null;
+  ok: boolean;
+  error_msg: string | null;
+  duration_ms: number | null;
+  is_test: boolean;
+  created_at: string;
+}
 
 export interface WorkspaceMember {
   workspace_id: string;
