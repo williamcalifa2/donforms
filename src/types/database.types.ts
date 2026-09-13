@@ -94,6 +94,8 @@ export interface FormSettings {
   anonymizeIp?: boolean;
   /** LGPD/GDPR: reter dados por N dias (0 = indefinido) */
   retentionDays?: number | null;
+  /** Integrações configuradas: { make: { webhookUrl, enabled, connectedAt }, ... } */
+  integrations?: Record<string, { webhookUrl?: string; enabled: boolean; connectedAt?: string }>;
 }
 
 export type WorkspaceRole = "admin" | "member" | "viewer";

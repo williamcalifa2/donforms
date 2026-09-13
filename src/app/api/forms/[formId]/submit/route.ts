@@ -162,9 +162,14 @@ export async function POST(
   }
 
   // ── Webhook(s) ────────────────────────────────────────────────────────────
+  const integrationUrls = Object.values(settings.integrations ?? {})
+    .filter((i) => i.enabled && i.webhookUrl)
+    .map((i) => i.webhookUrl!);
+
   const allWebhookUrls = [
     ...(settings.webhookUrl ? [settings.webhookUrl] : []),
     ...(settings.webhookUrls ?? []),
+    ...integrationUrls,
   ].filter(Boolean);
 
   if (allWebhookUrls.length > 0) {
