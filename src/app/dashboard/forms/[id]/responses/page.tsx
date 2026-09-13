@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
 import type { Form, Submission } from "@/types/database.types";
 import type { Metadata } from "next";
-import { CsvExportButton } from "./CsvExportButton";
 import { ResponseCards } from "./ResponseCards";
 
 interface Props {
@@ -70,10 +69,6 @@ export default async function ResponsesPage({ params }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
-          {typedSubmissions.length > 0 && (
-            <CsvExportButton form={typedForm} submissions={typedSubmissions} />
-          )}
-
           {/* View tabs */}
           <div className="flex items-center gap-1 rounded-lg p-1" style={{ background: "rgba(255,255,255,0.05)" }}>
             <span className="px-3 py-1.5 rounded-md text-xs font-medium"
