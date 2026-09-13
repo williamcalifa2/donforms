@@ -55,6 +55,9 @@ export async function POST(req: NextRequest) {
 
   // Send invite email via Resend (if configured)
   const resendKey = process.env.RESEND_API_KEY;
+  let emailSent = false;
+  let emailError: string | null = null;
+
   if (resendKey) {
     const { data: ownerProfile } = await client
       .from("profiles")
@@ -64,11 +67,16 @@ export async function POST(req: NextRequest) {
 
     const ownerName = ownerProfile?.name ?? user.email ?? "Alguém";
 
-    await fetch("https://api.resend.com/emails", {
+    // RESEND_FROM_EMAIL deve ser de domínio verificado no Resend.
+    // Fallback: onboarding@resend.dev (domínio oficial Resend, sem verificação necessária).
+    const fromEmail = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
+    const fromLabel = fromEmail === "onboarding@resend.dev" ? "DonForms" : "DonForms";
+
+    const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
       body: JSON.stringify({
-        from: "DonForms <notificacoes@donforms.vercel.app>",
+        from: `${fromLabel} <${fromEmail}>`,
         to: [email],
         subject: `${ownerName} convidou você para o DonForms`,
         html: `
@@ -94,8 +102,21 @@ export async function POST(req: NextRequest) {
           </div>
         `,
       }),
-    }).catch(() => null);
+    }).catch((e) => { emailError = String(e); return null; });
+
+    if (resendRes) {
+      if (resendRes.ok) {
+        emailSent = true;
+      } else {
+        const errBody = await resendRes.json().catch(() => ({}));
+        emailError = `Resend ${resendRes.status}: ${JSON.stringify(errBody)}`;
+        console.error("[invite] Resend error:", emailError);
+      }
+    }
+  } else {
+    emailError = "RESEND_API_KEY não configurada";
+    console.warn("[invite] email not sent:", emailError);
   }
 
-  return NextResponse.json({ ok: true, acceptUrl });
+  return NextResponse.json({ ok: true, acceptUrl, emailSent, emailError });
 }

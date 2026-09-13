@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, ChartBar, ChartLineUp, GearSix, UsersThree, PlugsConnected } from "@phosphor-icons/react";
+import { FileText, ChartBar, ChartLineUp, GearSix, UsersThree } from "@phosphor-icons/react";
 
 const NAV_MAIN = [
-  { href: "/dashboard",                label: "Formulários",   Icon: FileText       },
-  { href: "/dashboard/analytics",      label: "Analytics",     Icon: ChartBar       },
-  { href: "/dashboard/pipeline",       label: "Pipeline MQL",  Icon: ChartLineUp    },
-  { href: "/dashboard/integrations",   label: "Integrações",   Icon: PlugsConnected },
+  { href: "/dashboard",           label: "Formulários",  Icon: FileText    },
+  { href: "/dashboard/analytics", label: "Analytics",    Icon: ChartBar    },
+  { href: "/dashboard/pipeline",  label: "Pipeline MQL", Icon: ChartLineUp },
 ];
 
 const NAV_SETTINGS = [
