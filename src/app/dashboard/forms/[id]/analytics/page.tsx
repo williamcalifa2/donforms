@@ -1,8 +1,10 @@
+export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Form, FormEvent } from "@/types/database.types";
 import type { Metadata } from "next";
+import { BubbleChart } from "@/components/analytics/BubbleChart";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -36,8 +38,8 @@ export default async function AnalyticsPage({ params }: Props) {
 
   const { data: submissions } = await client
     .from("submissions")
-    .select("id, metadata")
-    .eq("form_id", id) as { data: { id: string; metadata: Record<string, string> | null }[] | null };
+    .select("id, metadata, answers")
+    .eq("form_id", id) as { data: { id: string; metadata: Record<string, string> | null; answers: Record<string, string | string[] | number> | null }[] | null };
 
   const evs = events ?? [];
   const views = evs.filter(e => e.event_type === "view").length;
@@ -68,8 +70,27 @@ export default async function AnalyticsPage({ params }: Props) {
   }
   const utmBreakdown = Object.entries(utmCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-  const maxUtm = Math.max(...utmBreakdown.map(([, v]) => v), 1);
+    .slice(0, 12);
+
+  // Response distribution per multiple_choice / yes_no field
+  const choiceFields = inputFields.filter(f =>
+    f.type === "multiple_choice" || f.type === "yes_no" || f.type === "rating"
+  );
+  const responseDistributions = choiceFields.map(field => {
+    const counts: Record<string, number> = {};
+    for (const sub of submissions ?? []) {
+      const raw = sub.answers?.[field.id];
+      if (raw == null) continue;
+      const vals = Array.isArray(raw) ? raw : [String(raw)];
+      for (const v of vals) {
+        if (v) counts[v] = (counts[v] ?? 0) + 1;
+      }
+    }
+    return {
+      field,
+      items: Object.entries(counts).map(([label, count]) => ({ label, count })),
+    };
+  }).filter(d => d.items.length > 0);
 
   return (
     <div className="space-y-6">
@@ -152,31 +173,29 @@ export default async function AnalyticsPage({ params }: Props) {
         </div>
       )}
 
-      {/* UTM Breakdown */}
+      {/* UTM Breakdown — bubble chart */}
       {utmBreakdown.length > 0 && (
-        <div className="rounded-xl p-5 space-y-4" style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.88)" }}>
-              Origem dos leads
-            </h2>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}>
-              {utmParam}
-            </span>
-          </div>
-          <div className="space-y-2.5">
-            {utmBreakdown.map(([val, count]) => {
-              const pct = Math.round((count / maxUtm) * 100);
-              return (
-                <div key={val} className="flex items-center gap-3">
-                  <span className="text-xs font-mono truncate w-36 shrink-0" style={{ color: "rgba(255,255,255,0.7)" }}>{val}</span>
-                  <div className="flex-1 rounded-full h-2 overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: "hsl(238 100% 74%)" }} />
-                  </div>
-                  <span className="text-xs tabular-nums w-8 text-right" style={{ color: "rgba(255,255,255,0.4)" }}>{count}</span>
-                </div>
-              );
-            })}
-          </div>
+        <BubbleChart
+          items={utmBreakdown.map(([label, count]) => ({ label, count }))}
+          title="Origem dos leads"
+          subtitle={`Por ${utmParam}`}
+        />
+      )}
+
+      {/* Response distribution — bubble chart per field */}
+      {responseDistributions.length > 0 && (
+        <div className="space-y-4">
+          <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.88)" }}>
+            Distribuição de respostas
+          </p>
+          {responseDistributions.map(({ field, items }) => (
+            <BubbleChart
+              key={field.id}
+              items={items}
+              title={field.label}
+              subtitle={`${items.reduce((s, i) => s + i.count, 0)} respostas`}
+            />
+          ))}
         </div>
       )}
 

@@ -324,6 +324,10 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
   const answeredCount = Object.keys(answers).length;
   const progress = state === "done" ? 100 : Math.round((answeredCount / Math.max(inputFields.length, 1)) * 100);
   const { primaryColor, bgColor, thankYouMessage, redirectUrl, metaPixelId, googleTagId } = settings;
+  const ctaColor = settings.ctaColor || primaryColor;
+  const ctaText = settings.ctaText || null;
+  const fontFamily = settings.fontFamily || "Darker Grotesque";
+  const bgImageUrl = settings.bgImageUrl || null;
   const [r, g, b] = hexToRgb(primaryColor);
   const logoUrl = settings.logoUrl;
   const dark = isDark(bgColor);
@@ -514,7 +518,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Darker+Grotesque:wght@400;600;700;900&display=swap" />
+      <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontFamily).replace(/%20/g, "+")}:wght@400;600;700;900&display=swap`} />
 
       {/* Blob animation keyframes */}
       <style>{`
@@ -556,7 +560,10 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
           overflow: "hidden",
           position: "relative",
           backgroundColor: bgColor,
-          fontFamily: "'Darker Grotesque', sans-serif",
+          backgroundImage: bgImageUrl ? `url(${bgImageUrl})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          fontFamily: `'${fontFamily}', 'Darker Grotesque', sans-serif`,
           color: textColor,
           display: "flex",
           flexDirection: "column",
@@ -682,7 +689,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                       display: "inline-flex", alignItems: "center", gap: 10,
                       padding: "14px 28px",
                       borderRadius: 14,
-                      background: primaryColor,
+                      background: ctaColor,
                       color: "#ffffff",
                       fontSize: 18, fontWeight: 700,
                       fontFamily: "inherit",
@@ -702,7 +709,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                       (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 8px 28px rgba(${r},${g},${b},0.35)`;
                     }}
                   >
-                    Começar
+                    {ctaText ?? "Começar"}
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -731,6 +738,8 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                 onPrev={handlePrev}
                 isLast={resolveNext(fields, current, answers) === "submit"}
                 primaryColor={primaryColor}
+                ctaColor={ctaColor}
+                ctaText={ctaText ?? undefined}
                 direction={direction}
                 error={fieldError}
                 accentRgb={[r, g, b]}

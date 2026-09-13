@@ -23,6 +23,8 @@ interface Props {
   onPrev: () => void;
   isLast: boolean;
   primaryColor: string;
+  ctaColor?: string;
+  ctaText?: string;
   direction: 1 | -1;
   error?: string;
   accentRgb: [number, number, number];
@@ -56,11 +58,12 @@ const NO_ENTER_TYPES = new Set(["file_upload", "long_text", "multiple_choice", "
 
 export function QuestionSlide({
   field, index, value, onChange, onNext, onPrev, isLast,
-  primaryColor, direction, error, accentRgb, textColor, formId,
+  primaryColor, ctaColor, ctaText, direction, error, accentRgb, textColor, formId,
 }: Props) {
   const isStatement = field.type === "statement";
   const showOK = !AUTO_ADVANCE_TYPES.has(field.type) && !NO_OK_TYPES.has(field.type);
   const [r, g, b] = accentRgb;
+  const btnColor = ctaColor || primaryColor;
 
   return (
     <motion.div
@@ -216,10 +219,10 @@ export function QuestionSlide({
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "8px 16px",
               borderRadius: 8,
-              background: primaryColor,
+              background: btnColor,
               color: "#ffffff",
               fontSize: 14, fontWeight: 700,
-              fontFamily: "'Darker Grotesque', sans-serif",
+              fontFamily: "inherit",
               border: "none",
               cursor: "pointer",
               letterSpacing: "-0.2px",
@@ -235,7 +238,7 @@ export function QuestionSlide({
               (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px rgba(${r},${g},${b},0.35)`;
             }}
           >
-            {isStatement ? "Continuar" : isLast ? "Enviar" : "OK"}
+            {isStatement ? (ctaText ?? "Continuar") : isLast ? (ctaText ?? "Enviar") : (ctaText ?? "OK")}
             <span style={{ fontSize: 13, opacity: 0.85 }}>
               {isStatement ? "→" : isLast ? "✓" : "↵"}
             </span>
@@ -249,13 +252,13 @@ export function QuestionSlide({
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "8px 16px", borderRadius: 8,
-              background: primaryColor, color: "#fff",
+              background: btnColor, color: "#fff",
               fontSize: 14, fontWeight: 700, fontFamily: "inherit",
               border: "none", cursor: "pointer",
               boxShadow: `0 4px 16px rgba(${r},${g},${b},0.35)`,
             }}
           >
-            {isLast ? "Enviar ✓" : "OK ↵"}
+            {isLast ? `${ctaText ?? "Enviar"} ✓` : `${ctaText ?? "OK"} ↵`}
           </button>
         )}
 

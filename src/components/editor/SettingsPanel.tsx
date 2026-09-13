@@ -11,6 +11,22 @@ const PRESET_COLORS = [
 
 const DON_THEME = { primaryColor: "#7D83BD", bgColor: "#000000" };
 
+const GOOGLE_FONTS = [
+  { label: "Darker Grotesque (padrão)", value: "Darker Grotesque" },
+  { label: "Poppins", value: "Poppins" },
+  { label: "Montserrat", value: "Montserrat" },
+  { label: "Raleway", value: "Raleway" },
+  { label: "DM Sans", value: "DM Sans" },
+  { label: "Outfit", value: "Outfit" },
+  { label: "Nunito", value: "Nunito" },
+  { label: "Lato", value: "Lato" },
+  { label: "Roboto", value: "Roboto" },
+  { label: "Inter", value: "Inter" },
+  { label: "Playfair Display", value: "Playfair Display" },
+  { label: "Space Grotesk", value: "Space Grotesk" },
+  { label: "Sora", value: "Sora" },
+];
+
 const UTM_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 
 const CHANNEL_PRESETS = [
@@ -391,7 +407,66 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
         >
           <p className="text-sm font-medium mb-3" style={{ color: "#1a1a1a" }}>Preview</p>
           <button className="px-4 py-2 rounded-lg text-white text-xs font-medium"
-            style={{ backgroundColor: settings.primaryColor }}>Próximo →</button>
+            style={{ backgroundColor: settings.ctaColor || settings.primaryColor }}>
+            {settings.ctaText || "Próximo →"}
+          </button>
+        </div>
+
+        {/* Fonte */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Fonte do formulário</label>
+          <select
+            value={settings.fontFamily ?? "Darker Grotesque"}
+            onChange={(e) => onChange({ fontFamily: e.target.value })}
+            className="w-full h-8 rounded-md border border-input bg-background text-foreground text-xs px-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {GOOGLE_FONTS.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Imagem de fundo */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Imagem de fundo (URL)</label>
+          <Input
+            value={settings.bgImageUrl ?? ""}
+            onChange={(e) => onChange({ bgImageUrl: e.target.value || null })}
+            placeholder="https://images.unsplash.com/..."
+            type="url"
+          />
+          <p className="text-[11px] text-muted-foreground">Sobreposta sobre a cor de fundo. Use imagem escura ou ajuste opacidade.</p>
+        </div>
+
+        {/* CTA customizável */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Texto do botão CTA</label>
+          <Input
+            value={settings.ctaText ?? ""}
+            onChange={(e) => onChange({ ctaText: e.target.value || null })}
+            placeholder="Próximo →"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Cor do botão CTA</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={settings.ctaColor || settings.primaryColor}
+              onChange={(e) => onChange({ ctaColor: e.target.value })}
+              className="h-9 w-16 rounded-lg border border-input cursor-pointer p-0.5" />
+            <Input value={settings.ctaColor ?? ""}
+              onChange={(e) => onChange({ ctaColor: e.target.value || null })}
+              placeholder="Igual à cor primária" className="font-mono text-xs" />
+            {settings.ctaColor && (
+              <button
+                onClick={() => onChange({ ctaColor: null })}
+                className="text-[10px] px-2 py-1 rounded"
+                style={{ color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer" }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
       </Section>
 

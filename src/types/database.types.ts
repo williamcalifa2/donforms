@@ -96,6 +96,14 @@ export interface FormSettings {
   retentionDays?: number | null;
   /** Integrações configuradas: { make: { webhookUrl, enabled, connectedAt }, ... } */
   integrations?: Record<string, { webhookUrl?: string; enabled: boolean; connectedAt?: string }>;
+  /** Fonte Google Fonts customizada (e.g. "Poppins", "Montserrat") */
+  fontFamily?: string | null;
+  /** URL de imagem de fundo do formulário */
+  bgImageUrl?: string | null;
+  /** Texto do botão CTA (padrão: "Próximo →" / "Enviar") */
+  ctaText?: string | null;
+  /** Cor do botão CTA (se null, usa primaryColor) */
+  ctaColor?: string | null;
 }
 
 export type WorkspaceRole = "admin" | "member" | "viewer";
