@@ -69,27 +69,38 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
   const [inviteRole, setInviteRole]       = useState<"admin" | "member" | "viewer">("member");
   const [inviteError, setInviteError]     = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [inviteLink, setInviteLink]       = useState<string | null>(null);
+  const [emailSent, setEmailSent]         = useState<boolean | null>(null);
+  const [emailErrMsg, setEmailErrMsg]     = useState<string | null>(null);
+  const [linkCopied, setLinkCopied]       = useState(false);
   const [isPending, startTransition]      = useTransition();
 
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviteError(null);
     setInviteSuccess(false);
+    setInviteLink(null);
+    setEmailSent(null);
+    setEmailErrMsg(null);
+    setLinkCopied(false);
+    const emailBeingSent = inviteEmail;
     startTransition(async () => {
       const res = await fetch("/api/workspace/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+        body: JSON.stringify({ email: emailBeingSent, role: inviteRole }),
       });
       const data = await res.json();
       if (!res.ok) { setInviteError(data.error ?? "Erro ao enviar convite."); return; }
       setInviteSuccess(true);
+      setInviteLink(data.acceptUrl ?? null);
+      setEmailSent(data.emailSent ?? false);
+      setEmailErrMsg(data.emailError ?? null);
       setInviteEmail("");
-      // Add to pending list optimistically (re-fetch would be ideal but this is fine for UX)
       setInvitations(prev => [...prev, {
         id: crypto.randomUUID(),
         workspace_id: ownerId,
-        email: inviteEmail.toLowerCase(),
+        email: emailBeingSent.toLowerCase(),
         role: inviteRole,
         token: "",
         invited_by: ownerId,
@@ -98,6 +109,13 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
         created_at: new Date().toISOString(),
       }]);
     });
+  }
+
+  async function copyLink() {
+    if (!inviteLink) return;
+    await navigator.clipboard.writeText(inviteLink);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2500);
   }
 
   async function removeMember(userId: string) {
@@ -192,8 +210,78 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
         {inviteError && (
           <p style={{ marginTop: 8, fontSize: 12, color: "#f87171" }}>⚠ {inviteError}</p>
         )}
+
         {inviteSuccess && (
-          <p style={{ marginTop: 8, fontSize: 12, color: "#34d399" }}>✓ Convite enviado com sucesso!</p>
+          <div style={{
+            marginTop: 12,
+            padding: "12px 14px",
+            borderRadius: 10,
+            background: "rgba(52,211,153,0.07)",
+            border: "1px solid rgba(52,211,153,0.18)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, color: "#34d399", fontWeight: 600 }}>
+                ✓ Convite criado
+              </span>
+              {emailSent === true && (
+                <span style={{ fontSize: 11, color: "rgba(52,211,153,0.7)" }}>· email enviado</span>
+              )}
+              {emailSent === false && (
+                <span style={{ fontSize: 11, color: "#fbbf24" }}>· email não enviado</span>
+              )}
+            </div>
+
+            {/* Always show the link — reliable fallback */}
+            {inviteLink && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>Link de aceite:</span>
+                <code style={{
+                  fontSize: 11,
+                  color: "rgba(255,255,255,0.6)",
+                  background: "rgba(0,0,0,0.3)",
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                  maxWidth: 280,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  display: "block",
+                  flex: 1,
+                  minWidth: 0,
+                }}>
+                  {inviteLink}
+                </code>
+                <button
+                  onClick={copyLink}
+                  style={{
+                    flexShrink: 0,
+                    padding: "4px 12px",
+                    borderRadius: 6,
+                    background: linkCopied ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: linkCopied ? "#34d399" : "rgba(255,255,255,0.6)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {linkCopied ? "Copiado ✓" : "Copiar link"}
+                </button>
+              </div>
+            )}
+
+            {/* Show email error detail when failed */}
+            {emailSent === false && emailErrMsg && (
+              <p style={{ fontSize: 11, color: "rgba(251,191,36,0.7)", margin: 0 }}>
+                ⚠ {emailErrMsg.includes("RESEND_API_KEY") ? "Configure RESEND_API_KEY nas variáveis de ambiente para envio automático por email." : `Erro email: ${emailErrMsg}`}
+              </p>
+            )}
+          </div>
         )}
       </section>
 
