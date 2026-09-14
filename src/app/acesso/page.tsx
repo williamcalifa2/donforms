@@ -1,0 +1,252 @@
+/**
+ * /acesso — Token de acesso para convites
+ * Pessoa digita o token recebido no email → server valida → gera magic link silencioso → redirect
+ */
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Acessar workspace — DonForms" };
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.com.br";
+
+async function acessarComToken(formData: FormData) {
+  "use server";
+
+  const token = (formData.get("token") as string | null)?.trim().toLowerCase();
+  if (!token || token.length < 3) {
+    redirect(`/acesso?erro=token_invalido`);
+  }
+
+  // Check if user is already logged in
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = await createClient() as any;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    // Already authenticated — try to accept invite directly
+    redirect(`/invite/${encodeURIComponent(token)}`);
+  }
+
+  // Use admin client to bypass RLS for token lookup (user is not authenticated yet)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = createAdminClient() as any;
+  const { data: inv, error: invErr } = await admin
+    .from("workspace_invitations")
+    .select("email, token, workspace_id, role, expires_at")
+    .eq("token", token)
+    .is("accepted_at", null)
+    .maybeSingle();
+
+  if (invErr || !inv) {
+    redirect(`/acesso?erro=token_nao_encontrado`);
+  }
+
+  // Check expiry (if set)
+  if (inv.expires_at && new Date(inv.expires_at) < new Date()) {
+    redirect(`/acesso?erro=token_expirado`);
+  }
+
+  // Generate Supabase magic link for this email (silent — user never sees the email)
+  const callbackUrl = `${APP_URL}/auth/confirm?next=${encodeURIComponent(`/invite/${token}`)}`;
+
+  try {
+    const adminAuth = createAdminClient();
+    const { data: linkData, error: linkErr } = await adminAuth.auth.admin.generateLink({
+      type: "magiclink",
+      email: inv.email,
+      options: { redirectTo: callbackUrl },
+    });
+
+    if (linkErr || !linkData?.properties?.action_link) {
+      console.error("[acesso] generateLink error:", linkErr?.message);
+      redirect(`/acesso?erro=erro_interno`);
+    }
+
+    // Redirect user to magic link → auto-authenticates → /invite/[token] → accept → /dashboard
+    redirect(linkData.properties.action_link);
+  } catch (e) {
+    console.error("[acesso] admin error:", e);
+    redirect(`/acesso?erro=erro_interno`);
+  }
+}
+
+interface Props {
+  searchParams: Promise<{ erro?: string }>;
+}
+
+const ERROS: Record<string, string> = {
+  token_invalido: "Token muito curto ou inválido.",
+  token_nao_encontrado: "Token não encontrado ou já foi usado.",
+  token_expirado: "Este token expirou. Peça um novo convite.",
+  erro_interno: "Erro ao processar. Tente novamente.",
+};
+
+export default async function AcessoPage({ searchParams }: Props) {
+  const { erro } = await searchParams;
+  const errMsg = erro ? (ERROS[erro] ?? "Erro desconhecido.") : null;
+
+  return (
+    <div style={{
+      minHeight: "100dvh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "#06060e",
+      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+      padding: "24px 16px",
+    }}>
+      {/* Background glow */}
+      <div style={{
+        position: "fixed",
+        top: "20%",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: 600,
+        height: 400,
+        background: "radial-gradient(ellipse at center, rgba(158,168,255,0.06) 0%, transparent 70%)",
+        pointerEvents: "none",
+      }} />
+
+      <div style={{
+        width: "100%",
+        maxWidth: 420,
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderRadius: 20,
+        padding: "40px 36px",
+        position: "relative",
+      }}>
+        {/* Gradient top accent */}
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "linear-gradient(90deg, #9ea8ff, #7c87ff, #9ea8ff)",
+          borderRadius: "20px 20px 0 0",
+        }} />
+
+        {/* Logo */}
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          background: "linear-gradient(135deg,#9ea8ff,#7c87ff)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 28,
+          boxShadow: "0 8px 24px rgba(158,168,255,0.3)",
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M13 2L4.09 12.97A1 1 0 005 14.5h6.5L10 22l9.91-10.97A1 1 0 0019 10H12.5L13 2z"/>
+          </svg>
+        </div>
+
+        <h1 style={{
+          fontSize: 22,
+          fontWeight: 700,
+          color: "rgba(255,255,255,0.92)",
+          margin: "0 0 8px",
+          letterSpacing: "-0.3px",
+        }}>
+          Acessar workspace
+        </h1>
+        <p style={{
+          fontSize: 14,
+          color: "rgba(255,255,255,0.4)",
+          margin: "0 0 28px",
+          lineHeight: 1.6,
+        }}>
+          Digite o token de acesso que você recebeu no email do convite.
+        </p>
+
+        {/* Error */}
+        {errMsg && (
+          <div style={{
+            padding: "12px 16px",
+            background: "rgba(255,80,80,0.08)",
+            border: "1px solid rgba(255,80,80,0.2)",
+            borderRadius: 10,
+            marginBottom: 20,
+            fontSize: 13,
+            color: "#ff7070",
+          }}>
+            {errMsg}
+          </div>
+        )}
+
+        <form action={acessarComToken}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{
+              display: "block",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.4)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: 8,
+            }}>
+              Token de acesso
+            </label>
+            <input
+              name="token"
+              type="text"
+              required
+              minLength={3}
+              autoComplete="off"
+              autoFocus
+              placeholder="ex: flores2024"
+              style={{
+                width: "100%",
+                padding: "13px 16px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(158,168,255,0.25)",
+                borderRadius: 10,
+                color: "#9ea8ff",
+                fontSize: 18,
+                fontFamily: "monospace",
+                fontWeight: 700,
+                letterSpacing: "0.05em",
+                outline: "none",
+                boxSizing: "border-box",
+                caretColor: "#9ea8ff",
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "14px 24px",
+              background: "linear-gradient(135deg,#9ea8ff,#7c87ff)",
+              border: "none",
+              borderRadius: 12,
+              color: "#fff",
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: "pointer",
+              letterSpacing: "-0.2px",
+              boxShadow: "0 8px 24px rgba(158,168,255,0.3)",
+            }}
+          >
+            Entrar →
+          </button>
+        </form>
+
+        <p style={{
+          marginTop: 24,
+          fontSize: 12,
+          color: "rgba(255,255,255,0.2)",
+          textAlign: "center",
+          lineHeight: 1.6,
+        }}>
+          Não tem token? Peça um convite ao administrador do workspace.
+        </p>
+      </div>
+    </div>
+  );
+}
