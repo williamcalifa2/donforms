@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getEffectiveOwnerId } from "@/lib/workspace/getWorkspaceOwner";
 import type { FormField, FormSettings } from "@/types/database.types";
 
 // Helper: supabase client sem type-checking de tabela
@@ -10,6 +12,15 @@ async function db() {
   const client = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return client as any;
+}
+
+// Helper: return admin client for cross-workspace ops, regular for own-workspace
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dbFor(ownerId: string, userId: string): any {
+  if (ownerId === userId) return createClient().then(c => c as any);
+  // Member accessing another workspace — use admin to bypass RLS
+  // (membership already verified by getEffectiveOwnerId)
+  return Promise.resolve(createAdminClient() as any);
 }
 
 // ─── Criar form ───────────────────────────────────────────────────────────────
@@ -76,13 +87,14 @@ export async function duplicateForm(formId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const client = await db();
+  const ownerId = await getEffectiveOwnerId(user.id);
+  const client = await dbFor(ownerId, user.id);
 
   const { data: original, error: fetchError } = await client
     .from("forms")
     .select("*")
     .eq("id", formId)
-    .eq("user_id", user.id)
+    .eq("user_id", ownerId)
     .single();
 
   if (fetchError || !original) return { error: "Formulário não encontrado" };
@@ -118,7 +130,8 @@ export async function saveForm(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const client = await db();
+  const ownerId = await getEffectiveOwnerId(user.id);
+  const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
     .update({
@@ -127,7 +140,7 @@ export async function saveForm(
       settings: payload.settings,
     })
     .eq("id", formId)
-    .eq("user_id", user.id);
+    .eq("user_id", ownerId);
 
   if (error) return { error: error.message };
 
@@ -194,12 +207,13 @@ export async function togglePublish(formId: string, publish: boolean) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const client = await db();
+  const ownerId = await getEffectiveOwnerId(user.id);
+  const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
     .update({ is_published: publish })
     .eq("id", formId)
-    .eq("user_id", user.id);
+    .eq("user_id", ownerId);
 
   if (error) return { error: error.message };
 
@@ -214,12 +228,13 @@ export async function renameForm(formId: string, title: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const client = await db();
+  const ownerId = await getEffectiveOwnerId(user.id);
+  const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
     .update({ title: title.trim() || "Sem título" })
     .eq("id", formId)
-    .eq("user_id", user.id);
+    .eq("user_id", ownerId);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard");
@@ -251,8 +266,9 @@ export async function deleteForm(formId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const client = await db();
-  await client.from("forms").delete().eq("id", formId).eq("user_id", user.id);
+  const ownerId = await getEffectiveOwnerId(user.id);
+  const client = await dbFor(ownerId, user.id);
+  await client.from("forms").delete().eq("id", formId).eq("user_id", ownerId);
 
   redirect("/dashboard");
 }

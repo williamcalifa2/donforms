@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getEffectiveOwnerId } from "@/lib/workspace/getWorkspaceOwner";
 import { formatDate } from "@/lib/utils";
 import type { Form, Submission } from "@/types/database.types";
 import type { Metadata } from "next";
@@ -20,11 +22,15 @@ export default async function ResponsesPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: form, error } = await supabase
+  const ownerId = await getEffectiveOwnerId(user.id);
+
+  // Use admin client to bypass RLS — membership already verified in getEffectiveOwnerId
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: form, error } = await (createAdminClient() as any)
     .from("forms")
     .select("*")
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("user_id", ownerId)
     .single();
 
   if (error || !form) notFound();

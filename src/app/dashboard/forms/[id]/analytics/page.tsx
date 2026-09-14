@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getEffectiveOwnerId } from "@/lib/workspace/getWorkspaceOwner";
 import type { Form, FormEvent } from "@/types/database.types";
 import type { Metadata } from "next";
 import { BubbleChart } from "@/components/analytics/BubbleChart";
@@ -22,11 +24,15 @@ export default async function AnalyticsPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const client = supabase as any;
 
-  const { data: form, error } = await client
+  const ownerId = await getEffectiveOwnerId(user.id);
+
+  // Use admin client to bypass RLS — membership already verified in getEffectiveOwnerId
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: form, error } = await (createAdminClient() as any)
     .from("forms")
     .select("id, title, fields, is_published, settings")
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("user_id", ownerId)
     .single() as { data: Form | null; error: unknown };
 
   if (error || !form) notFound();
