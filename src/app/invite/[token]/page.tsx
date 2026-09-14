@@ -1,5 +1,8 @@
+/**
+ * /invite/[token] — redireciona para o route handler que aceita o convite.
+ * Aceitar convite (setar cookies) só pode ser feito em Route Handlers/Server Actions.
+ */
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Metadata } from "next";
@@ -15,25 +18,21 @@ export default async function InvitePage({ params }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Not logged in → to /acesso (token-based login)
+  // Not logged in → /acesso
   if (!user) {
-    redirect(`/acesso?next=${encodeURIComponent(`/invite/${token}`)}`);
+    redirect(`/acesso`);
   }
 
-  // Use admin client to bypass RLS for invite lookup
+  // Check if invite exists and email matches before redirecting
   const admin = createAdminClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminAny = admin as any;
 
-  const { data: inv, error: invErr } = await adminAny
+  const { data: inv } = await adminAny
     .from("workspace_invitations")
-    .select("id, email, role, workspace_id, accepted_at, expires_at")
+    .select("id, email, role, workspace_id, accepted_at")
     .eq("token", token)
     .maybeSingle();
-
-  if (invErr) {
-    console.error("[invite] lookup error:", invErr.message);
-  }
 
   const Logo = () => (
     <div style={{
@@ -60,19 +59,16 @@ export default async function InvitePage({ params }: Props) {
       minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center",
       background: "#06060e", fontFamily: "system-ui,-apple-system,sans-serif", padding: 24,
     }}>
-      <div style={cardStyle}>
-        <Logo />
-        {content}
-      </div>
+      <div style={cardStyle}><Logo />{content}</div>
     </div>
   );
 
-  // ── Invite not found ────────────────────────────────────────────────────────
+  // Token not found
   if (!inv) {
     return page(
       <>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginBottom: 10 }}>
-          Convite não encontrado
+          Código não encontrado
         </h1>
         <p style={{ fontSize: 15, color: "rgba(255,255,255,0.4)", lineHeight: 1.6, marginBottom: 24 }}>
           Este código de acesso não existe. Verifique o código recebido no email.
@@ -82,14 +78,12 @@ export default async function InvitePage({ params }: Props) {
           background: "rgba(158,168,255,0.12)", color: "#9ea8ff",
           fontSize: 14, fontWeight: 600, textDecoration: "none",
           border: "1px solid rgba(158,168,255,0.2)",
-        }}>
-          Ir para o Dashboard
-        </a>
+        }}>Ir para o Dashboard</a>
       </>
     );
   }
 
-  // ── Email mismatch: logged in as wrong account ──────────────────────────────
+  // Email mismatch
   const emailMatch = inv.email?.toLowerCase() === user.email?.toLowerCase();
   if (!emailMatch) {
     return page(
@@ -105,55 +99,11 @@ export default async function InvitePage({ params }: Props) {
           display: "inline-block", padding: "11px 20px", borderRadius: 10,
           background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)",
           fontSize: 13, fontWeight: 600, textDecoration: "none",
-        }}>
-          Ir para o Dashboard
-        </a>
+        }}>Ir para o Dashboard</a>
       </>
     );
   }
 
-  const cookieStore = await cookies();
-
-  // ── Already accepted: just set cookie and redirect ─────────────────────────
-  if (inv.accepted_at) {
-    cookieStore.set("_df_wid", inv.workspace_id, {
-      path: "/", httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 * 90,
-    });
-    redirect("/dashboard");
-  }
-
-  // ── Accept the invitation ───────────────────────────────────────────────────
-  // 1. Mark accepted_at
-  const { error: acceptErr } = await adminAny
-    .from("workspace_invitations")
-    .update({ accepted_at: new Date().toISOString() })
-    .eq("id", inv.id);
-
-  if (acceptErr) {
-    console.error("[invite] accept error:", acceptErr.message);
-  }
-
-  // 2. Add to workspace_members (ignore conflict if already member)
-  const { error: memberErr } = await adminAny
-    .from("workspace_members")
-    .upsert(
-      {
-        workspace_id: inv.workspace_id,
-        user_id: user.id,
-        role: inv.role ?? "member",
-        joined_at: new Date().toISOString(),
-      },
-      { onConflict: "workspace_id,user_id" }
-    );
-
-  if (memberErr) {
-    console.error("[invite] member upsert error:", memberErr.message);
-  }
-
-  // 3. Set active workspace cookie
-  cookieStore.set("_df_wid", inv.workspace_id, {
-    path: "/", httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 * 90,
-  });
-
-  redirect("/dashboard?welcome=1");
+  // All good → route handler handles cookie + workspace join + redirect
+  redirect(`/api/invite/accept?token=${encodeURIComponent(token)}`);
 }

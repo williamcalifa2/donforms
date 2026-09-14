@@ -77,8 +77,8 @@ async function acessarComToken(formData: FormData) {
     redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(verifyErr.message)}`);
   }
 
-  // Sessão setada via cookies — redireciona direto para aceitar convite
-  redirect(`/invite/${token}`);
+  // Sessão setada via cookies — redireciona para route handler que aceita o convite
+  redirect(`/api/invite/accept?token=${encodeURIComponent(token)}`);
 }
 
 interface Props {
