@@ -67,11 +67,14 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
   const [invitations, setInvitations]     = useState(initialInvitations);
   const [inviteEmail, setInviteEmail]     = useState("");
   const [inviteRole, setInviteRole]       = useState<"admin" | "member" | "viewer">("member");
+  const [inviteToken, setInviteToken]     = useState("");
   const [inviteError, setInviteError]     = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState(false);
   const [inviteLink, setInviteLink]       = useState<string | null>(null);
+  const [sentToken, setSentToken]         = useState<string | null>(null);
   const [emailSent, setEmailSent]         = useState<boolean | null>(null);
   const [emailErrMsg, setEmailErrMsg]     = useState<string | null>(null);
+  const [tokenCopied, setTokenCopied]     = useState(false);
   const [linkCopied, setLinkCopied]       = useState(false);
   const [isPending, startTransition]      = useTransition();
 
@@ -80,23 +83,28 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
     setInviteError(null);
     setInviteSuccess(false);
     setInviteLink(null);
+    setSentToken(null);
     setEmailSent(null);
     setEmailErrMsg(null);
     setLinkCopied(false);
+    setTokenCopied(false);
     const emailBeingSent = inviteEmail;
+    const tokenBeingSent = inviteToken.trim();
     startTransition(async () => {
       const res = await fetch("/api/workspace/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailBeingSent, role: inviteRole }),
+        body: JSON.stringify({ email: emailBeingSent, role: inviteRole, accessToken: tokenBeingSent || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setInviteError(data.error ?? "Erro ao enviar convite."); return; }
       setInviteSuccess(true);
-      setInviteLink(data.acceptUrl ?? null);
+      setInviteLink(data.accessUrl ?? null);
+      setSentToken(data.accessToken ?? null);
       setEmailSent(data.emailSent ?? false);
       setEmailErrMsg(data.emailError ?? null);
       setInviteEmail("");
+      setInviteToken("");
       setInvitations(prev => [...prev, {
         id: crypto.randomUUID(),
         workspace_id: ownerId,
@@ -116,6 +124,13 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
     await navigator.clipboard.writeText(inviteLink);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2500);
+  }
+
+  async function copyToken() {
+    if (!sentToken) return;
+    await navigator.clipboard.writeText(sentToken);
+    setTokenCopied(true);
+    setTimeout(() => setTokenCopied(false), 2500);
   }
 
   async function removeMember(userId: string) {
@@ -147,64 +162,96 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
           Convidar membro
         </h2>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>
-          O convidado receberá um email com um link para aceitar.
+          O convidado recebe o token de acesso por email e usa em <strong style={{ color: "rgba(255,255,255,0.5)" }}>/acesso</strong> para entrar sem criar conta.
         </p>
 
-        <form onSubmit={sendInvite} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input
-            type="email"
-            placeholder="email@empresa.com"
-            value={inviteEmail}
-            onChange={e => { setInviteEmail(e.target.value); setInviteError(null); setInviteSuccess(false); }}
-            required
-            style={{
-              flex: "1 1 220px",
-              padding: "10px 14px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.85)",
-              fontSize: 13,
-              outline: "none",
-              fontFamily: "inherit",
-            }}
-          />
-          <select
-            value={inviteRole}
-            onChange={e => setInviteRole(e.target.value as "admin" | "member" | "viewer")}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.75)",
-              fontSize: 13,
-              outline: "none",
-              fontFamily: "inherit",
-              cursor: "pointer",
-            }}
-          >
-            <option value="viewer">Visualizador</option>
-            <option value="member">Membro</option>
-            <option value="admin">Admin</option>
-          </select>
-          <button
-            type="submit"
-            disabled={isPending || !inviteEmail}
-            style={{
-              padding: "10px 20px",
-              borderRadius: 10,
-              background: "var(--accent)",
-              color: "#fff",
-              fontSize: 13, fontWeight: 600,
-              border: "none", cursor: isPending ? "not-allowed" : "pointer",
-              opacity: isPending ? 0.6 : 1,
-              fontFamily: "inherit",
-              transition: "opacity 0.15s",
-            }}
-          >
-            {isPending ? "Enviando…" : "Enviar convite"}
-          </button>
+        <form onSubmit={sendInvite} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              type="email"
+              placeholder="email@empresa.com"
+              value={inviteEmail}
+              onChange={e => { setInviteEmail(e.target.value); setInviteError(null); setInviteSuccess(false); }}
+              required
+              style={{
+                flex: "1 1 220px",
+                padding: "10px 14px", borderRadius: 10,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.85)", fontSize: 13,
+                outline: "none", fontFamily: "inherit",
+              }}
+            />
+            <select
+              value={inviteRole}
+              onChange={e => setInviteRole(e.target.value as "admin" | "member" | "viewer")}
+              style={{
+                padding: "10px 12px", borderRadius: 10,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.75)", fontSize: 13,
+                outline: "none", fontFamily: "inherit", cursor: "pointer",
+              }}
+            >
+              <option value="viewer">Visualizador</option>
+              <option value="member">Membro</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          {/* Token de acesso — 6 dígitos */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              placeholder="000000"
+              value={inviteToken}
+              onChange={e => setInviteToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              maxLength={6}
+              style={{
+                width: 120, flexShrink: 0,
+                padding: "10px 14px", borderRadius: 10,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(158,168,255,0.2)",
+                color: "var(--accent-c)", fontSize: 20,
+                outline: "none", fontFamily: "monospace",
+                letterSpacing: "0.15em", textAlign: "center",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setInviteToken(String(Math.floor(100000 + Math.random() * 900000)))}
+              style={{
+                padding: "10px 14px", borderRadius: 10,
+                background: "rgba(158,168,255,0.08)",
+                border: "1px solid rgba(158,168,255,0.15)",
+                color: "var(--accent-c)", fontSize: 12,
+                fontWeight: 600, cursor: "pointer",
+                fontFamily: "inherit", whiteSpace: "nowrap",
+              }}
+            >
+              Gerar
+            </button>
+            <button
+              type="submit"
+              disabled={isPending || !inviteEmail || inviteToken.length !== 6}
+              style={{
+                flex: 1,
+                padding: "10px 20px", borderRadius: 10,
+                background: "var(--accent-c)", color: "hsl(230 35% 7%)",
+                fontSize: 13, fontWeight: 700,
+                border: "none", cursor: isPending ? "not-allowed" : "pointer",
+                opacity: isPending || inviteToken.length !== 6 ? 0.5 : 1,
+                fontFamily: "inherit", transition: "opacity 0.15s", whiteSpace: "nowrap",
+              }}
+            >
+              {isPending ? "Enviando…" : "Enviar convite"}
+            </button>
+          </div>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", margin: 0 }}>
+            Token de 6 dígitos — use "Gerar" para criar automaticamente.
+          </p>
         </form>
 
         {inviteError && (
@@ -213,72 +260,62 @@ export function TeamSettings({ members, invitations: initialInvitations, ownerId
 
         {inviteSuccess && (
           <div style={{
-            marginTop: 12,
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: "rgba(52,211,153,0.07)",
-            border: "1px solid rgba(52,211,153,0.18)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
+            marginTop: 12, padding: "16px",
+            borderRadius: 12,
+            background: "rgba(158,168,255,0.06)",
+            border: "1px solid rgba(158,168,255,0.2)",
+            display: "flex", flexDirection: "column", gap: 12,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 12, color: "#34d399", fontWeight: 600 }}>
+              <span style={{ fontSize: 12, color: "var(--accent-c)", fontWeight: 600 }}>
                 ✓ Convite criado
               </span>
               {emailSent === true && (
-                <span style={{ fontSize: 11, color: "rgba(52,211,153,0.7)" }}>· email enviado</span>
+                <span style={{ fontSize: 11, color: "rgba(158,168,255,0.6)" }}>· token enviado por email</span>
               )}
               {emailSent === false && (
                 <span style={{ fontSize: 11, color: "#fbbf24" }}>· email não enviado</span>
               )}
             </div>
 
-            {/* Always show the link — reliable fallback */}
-            {inviteLink && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>Link de aceite:</span>
-                <code style={{
-                  fontSize: 11,
-                  color: "rgba(255,255,255,0.6)",
-                  background: "rgba(0,0,0,0.3)",
-                  padding: "2px 8px",
-                  borderRadius: 6,
-                  maxWidth: 280,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  display: "block",
-                  flex: 1,
-                  minWidth: 0,
-                }}>
-                  {inviteLink}
-                </code>
-                <button
-                  onClick={copyLink}
-                  style={{
-                    flexShrink: 0,
-                    padding: "4px 12px",
-                    borderRadius: 6,
-                    background: linkCopied ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.07)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: linkCopied ? "#34d399" : "rgba(255,255,255,0.6)",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {linkCopied ? "Copiado ✓" : "Copiar link"}
-                </button>
+            {/* Token destaque */}
+            {sentToken && (
+              <div style={{
+                padding: "12px 14px", borderRadius: 10,
+                background: "rgba(0,0,0,0.3)",
+                border: "1px solid rgba(158,168,255,0.15)",
+              }}>
+                <p style={{ margin: "0 0 6px", fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
+                  Token de acesso
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <code style={{
+                    flex: 1, fontSize: 18, fontWeight: 700,
+                    color: "var(--accent-c)", fontFamily: "monospace",
+                    letterSpacing: "0.05em",
+                  }}>
+                    {sentToken}
+                  </code>
+                  <button onClick={copyToken} style={{
+                    padding: "5px 12px", borderRadius: 8,
+                    background: tokenCopied ? "rgba(52,211,153,0.15)" : "rgba(158,168,255,0.12)",
+                    border: `1px solid ${tokenCopied ? "rgba(52,211,153,0.3)" : "rgba(158,168,255,0.2)"}`,
+                    color: tokenCopied ? "#34d399" : "var(--accent-c)",
+                    fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    fontFamily: "inherit", transition: "all 0.15s",
+                  }}>
+                    {tokenCopied ? "Copiado ✓" : "Copiar"}
+                  </button>
+                </div>
+                <p style={{ margin: "8px 0 0", fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+                  A pessoa entra em <strong style={{ color: "rgba(255,255,255,0.5)" }}>donforms.dondigital.com.br/acesso</strong> e digita este token.
+                </p>
               </div>
             )}
 
-            {/* Show email error detail when failed */}
             {emailSent === false && emailErrMsg && (
               <p style={{ fontSize: 11, color: "rgba(251,191,36,0.7)", margin: 0 }}>
-                ⚠ {emailErrMsg.includes("RESEND_API_KEY") ? "Configure RESEND_API_KEY nas variáveis de ambiente para envio automático por email." : `Erro email: ${emailErrMsg}`}
+                ⚠ {emailErrMsg.includes("RESEND_API_KEY") ? "Configure RESEND_API_KEY para envio automático." : `Erro: ${emailErrMsg}`}
               </p>
             )}
           </div>

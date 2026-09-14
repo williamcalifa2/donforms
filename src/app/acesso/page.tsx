@@ -14,8 +14,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.
 async function acessarComToken(formData: FormData) {
   "use server";
 
-  const token = (formData.get("token") as string | null)?.trim().toLowerCase();
-  if (!token || token.length < 3) {
+  const raw = (formData.get("token") as string | null)?.trim() ?? "";
+  const token = raw.replace(/\D/g, ""); // digits only
+  if (!/^\d{6}$/.test(token)) {
     redirect(`/acesso?erro=token_invalido`);
   }
 
@@ -76,7 +77,7 @@ interface Props {
 }
 
 const ERROS: Record<string, string> = {
-  token_invalido: "Token muito curto ou inválido.",
+  token_invalido: "Código inválido. Digite os 6 dígitos do email.",
   token_nao_encontrado: "Token não encontrado ou já foi usado.",
   token_expirado: "Este token expirou. Peça um novo convite.",
   erro_interno: "Erro ao processar. Tente novamente.",
@@ -160,7 +161,7 @@ export default async function AcessoPage({ searchParams }: Props) {
           margin: "0 0 28px",
           lineHeight: 1.6,
         }}>
-          Digite o token de acesso que você recebeu no email do convite.
+          Digite o código de 6 dígitos que você recebeu no email do convite.
         </p>
 
         {/* Error */}
@@ -194,11 +195,14 @@ export default async function AcessoPage({ searchParams }: Props) {
             <input
               name="token"
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
               required
-              minLength={3}
+              minLength={6}
+              maxLength={6}
               autoComplete="off"
               autoFocus
-              placeholder="ex: flores2024"
+              placeholder="000000"
               style={{
                 width: "100%",
                 padding: "13px 16px",
@@ -244,7 +248,7 @@ export default async function AcessoPage({ searchParams }: Props) {
           textAlign: "center",
           lineHeight: 1.6,
         }}>
-          Não tem token? Peça um convite ao administrador do workspace.
+          Não tem o código? Peça um convite ao administrador do workspace.
         </p>
       </div>
     </div>

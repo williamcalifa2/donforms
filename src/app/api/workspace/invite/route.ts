@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
   if (email.toLowerCase() === user.email?.toLowerCase()) {
     return NextResponse.json({ error: "Não é possível convidar a si mesmo." }, { status: 400 });
   }
-  if (!accessToken || accessToken.trim().length < 3) {
-    return NextResponse.json({ error: "Token de acesso obrigatório (mínimo 3 caracteres, sem espaços)." }, { status: 400 });
+  if (!accessToken || !/^\d{6}$/.test(accessToken.trim())) {
+    return NextResponse.json({ error: "Token de acesso deve ter exatamente 6 dígitos numéricos." }, { status: 400 });
   }
   const cleanToken = accessToken.trim();
 
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
             <!-- Token destaque -->
             <div style="padding:20px 24px;background:rgba(158,168,255,0.08);border:2px solid rgba(158,168,255,0.2);border-radius:14px;text-align:center;margin-bottom:24px;">
               <p style="margin:0 0 8px;font-size:11px;color:#5c6180;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">Seu token de acesso</p>
-              <p style="margin:0;font-size:28px;font-weight:800;color:#9ea8ff;font-family:monospace;letter-spacing:0.06em;">${cleanToken}</p>
+              <p style="margin:0;font-size:36px;font-weight:800;color:#9ea8ff;font-family:monospace;letter-spacing:0.18em;">${cleanToken}</p>
             </div>
 
             <!-- Instrução -->
