@@ -51,9 +51,11 @@ export async function POST(req: NextRequest) {
   }
 
   const invitePageUrl = `${APP_URL}/invite/${inv.token}`;
+  // Supabase redirects to /auth/confirm which exchanges the PKCE code,
+  // then redirects to /invite/{token} where the invite is auto-accepted.
+  const callbackUrl = `${APP_URL}/auth/confirm?next=${encodeURIComponent(`/invite/${inv.token}`)}`;
 
   // ── Generate Supabase magic link (no account creation required) ──────────
-  // redirectTo → after auth, Supabase redirects to the invite page
   let magicLinkUrl = invitePageUrl; // fallback: just the invite page URL
   let emailSent = false;
   let emailError: string | null = null;
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
       type: "magiclink",
       email: email.toLowerCase(),
       options: {
-        redirectTo: invitePageUrl,
+        redirectTo: callbackUrl,
       },
     });
 
