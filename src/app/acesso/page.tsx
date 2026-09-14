@@ -25,8 +25,7 @@ async function acessarComToken(formData: FormData) {
   const supabase = await createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
-    // Already authenticated — try to accept invite directly
-    redirect(`/invite/${encodeURIComponent(token)}`);
+    redirect(`/invite/${token}`);
   }
 
   // Use admin client to bypass RLS for token lookup (user is not authenticated yet)
