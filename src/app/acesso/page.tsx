@@ -51,6 +51,8 @@ async function acessarComToken(formData: FormData) {
   // Generate Supabase magic link for this email (silent — user never sees the email)
   const callbackUrl = `${APP_URL}/auth/confirm?next=${encodeURIComponent(`/invite/${token}`)}`;
 
+  let actionLink: string | null = null;
+
   try {
     const adminAuth = createAdminClient();
     const { data: linkData, error: linkErr } = await adminAuth.auth.admin.generateLink({
@@ -65,13 +67,17 @@ async function acessarComToken(formData: FormData) {
       redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(detail)}`);
     }
 
-    // Redirect user to magic link → auto-authenticates → /invite/[token] → accept → /dashboard
-    redirect(linkData.properties.action_link);
+    actionLink = linkData.properties.action_link;
   } catch (e) {
+    // Next.js redirect() throws internally — must rethrow
+    if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
     const detail = e instanceof Error ? e.message : String(e);
     console.error("[acesso] admin error:", detail);
     redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(detail)}`);
   }
+
+  // Redirect user to magic link → auto-authenticates → /invite/[token] → accept → /dashboard
+  redirect(actionLink!);
 }
 
 interface Props {
