@@ -7,9 +7,9 @@ export default function AuthLayout({
     <div
       style={{
         height: 36, width: 36, borderRadius: 10, flexShrink: 0,
-        background: "linear-gradient(135deg, #7c6ff7 0%, #a78bfa 100%)",
+        background: "linear-gradient(135deg, hsl(233 100% 81%) 0%, hsl(231 57% 67%) 100%)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: "0 4px 14px rgba(124,111,247,0.45)",
+        boxShadow: "0 4px 14px hsl(233 100% 81% / .35)",
       }}
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
@@ -19,37 +19,65 @@ export default function AuthLayout({
   );
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Painel esquerdo — branding */}
-      <div className="hidden lg:flex flex-col justify-between bg-zinc-950 p-10 text-white">
-        <div className="flex items-center gap-3">
+    <div className="dark min-h-screen grid lg:grid-cols-2">
+      {/* Left panel — branding */}
+      <div
+        className="hidden lg:flex flex-col justify-between p-10 text-white relative overflow-hidden"
+        style={{ background: "hsl(230 35% 7%)" }}
+      >
+        {/* Gradient accent strip at top */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 2,
+          background: "linear-gradient(135deg, hsl(233 100% 81%) 0%, hsl(231 57% 67%) 100%)",
+        }} />
+
+        {/* Background radial glow */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: "radial-gradient(ellipse at 20% 40%, hsl(233 100% 81% / .08) 0%, transparent 60%)",
+        }} />
+
+        {/* Dot grid */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+        }} />
+
+        <div className="relative flex items-center gap-3">
           <Logo />
           <span className="font-semibold text-lg tracking-tight">DonForms</span>
         </div>
 
-        <div className="space-y-4">
-          <blockquote className="text-xl font-medium leading-relaxed text-zinc-100">
+        <div className="relative space-y-4">
+          <blockquote
+            className="text-xl font-medium leading-relaxed"
+            style={{ color: "hsl(220 23% 95%)" }}
+          >
             &ldquo;Formulários que qualificam leads antes de chegar no comercial.&rdquo;
           </blockquote>
-          <p className="text-zinc-400 text-sm">
+          <p style={{ color: "hsl(220 15% 55%)", fontSize: 14 }}>
             Capture • Qualifique • Converta
           </p>
         </div>
 
-        <div className="flex gap-6 text-zinc-500 text-xs">
+        <div className="relative flex gap-6 text-xs" style={{ color: "hsl(220 15% 40%)" }}>
           <span>© 2026 DonForms</span>
-          <a href="#" className="hover:text-zinc-300 transition-colors">Privacidade</a>
-          <a href="#" className="hover:text-zinc-300 transition-colors">Termos</a>
+          <a href="#" style={{ color: "inherit" }} className="hover:text-white transition-colors">Privacidade</a>
+          <a href="#" style={{ color: "inherit" }} className="hover:text-white transition-colors">Termos</a>
         </div>
       </div>
 
-      {/* Painel direito — form */}
-      <div className="flex items-center justify-center p-6">
+      {/* Right panel — form */}
+      <div
+        className="flex items-center justify-center p-6"
+        style={{ background: "hsl(230 35% 7%)" }}
+      >
         <div className="w-full max-w-sm">
           {/* Logo mobile */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
             <Logo />
-            <span className="font-semibold text-lg tracking-tight">DonForms</span>
+            <span className="font-semibold text-lg tracking-tight text-white">DonForms</span>
           </div>
 
           {children}

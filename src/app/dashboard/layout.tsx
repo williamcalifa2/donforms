@@ -93,13 +93,22 @@ export default async function DashboardLayout({
         style={{
           width: "var(--sidebar-width)",
           background: "var(--sidebar-bg)",
-          borderRight: "1px solid var(--sidebar-border)",
+          borderRight: "1px solid var(--sidebar-border-c)",
         }}
       >
+        {/* Gradient header accent strip */}
+        <div
+          style={{
+            height: 2,
+            flexShrink: 0,
+            background: "var(--gradient-primary)",
+          }}
+        />
+
         {/* Workspace switcher */}
         <div
           className="px-4 h-14 flex items-center shrink-0"
-          style={{ borderBottom: "1px solid var(--sidebar-border)" }}
+          style={{ borderBottom: "1px solid var(--sidebar-border-c)" }}
         >
           <WorkspaceSwitcher current={activeWs} options={allWorkspaces} />
         </div>
@@ -108,7 +117,7 @@ export default async function DashboardLayout({
         <SidebarNav />
 
         {/* User */}
-        <div style={{ borderTop: "1px solid var(--sidebar-border)" }}>
+        <div style={{ borderTop: "1px solid var(--sidebar-border-c)" }}>
           <SidebarUserMenu
             displayName={displayName}
             email={email}

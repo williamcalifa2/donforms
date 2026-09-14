@@ -247,8 +247,8 @@ export function FormCard({ form, appUrl }: Props) {
             <div
               className="absolute right-0 bottom-full mb-1.5 w-44 rounded-xl py-1.5 z-50"
               style={{
-                background: "#0F1120",
-                border: "1px solid var(--sidebar-border)",
+                background: "var(--card-bg)",
+                border: "1px solid var(--card-border)",
                 boxShadow: "0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
               }}
             >

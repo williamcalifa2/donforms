@@ -52,7 +52,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       {/* Error banner */}
       {pageError && (
         <div className="rounded-xl px-4 py-3 text-sm"
-          style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171" }}>
+          style={{ background: "hsl(var(--destructive) / .1)", border: "1px solid hsl(var(--destructive) / .2)", color: "hsl(var(--destructive))" }}>
           ❌ {decodeURIComponent(pageError)}
         </div>
       )}
@@ -76,10 +76,10 @@ export default async function DashboardPage({ searchParams }: Props) {
       {list.length === 0 && (
         <div
           className="rounded-xl flex flex-col items-center justify-center py-20 px-6 text-center gap-4"
-          style={{ border: "2px dashed rgba(255,255,255,0.08)" }}
+          style={{ border: "2px dashed var(--card-border)" }}
         >
           <div className="h-12 w-12 rounded-xl flex items-center justify-center"
-            style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8" }}>
+            style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
               className="h-6 w-6">
@@ -88,10 +88,10 @@ export default async function DashboardPage({ searchParams }: Props) {
             </svg>
           </div>
           <div className="space-y-1">
-            <p className="font-medium text-sm" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
               Nenhum formulário ainda
             </p>
-            <p className="text-xs max-w-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <p className="text-xs max-w-xs" style={{ color: "var(--text-tertiary)" }}>
               Crie formulários conversacionais e compartilhe com o mundo.
             </p>
           </div>

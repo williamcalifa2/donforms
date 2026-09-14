@@ -4,112 +4,219 @@
 
 @layer base {
   :root {
-    /* Light mode (fallback) */
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
+    /* ── Pautta Light Mode ── */
+    --background: 220 23% 97%;
+    --foreground: 230 35% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 230 35% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 238 100% 74%;
+    --popover-foreground: 230 35% 12%;
+    --primary: 233 100% 81%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 238 55% 57%;
+    --secondary: 231 57% 67%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
-    --destructive: 0 84.2% 60.2%;
+    --muted: 220 15% 95%;
+    --muted-foreground: 230 10% 45%;
+    --accent: 233 100% 81%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 238 100% 74%;
+    --warning: 33 100% 70%;
+    --warning-foreground: 33 90% 30%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 233 100% 81%;
     --radius: 0.75rem;
+
+    /* Sidebar (light) */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 230 35% 12%;
+    --sidebar-primary: 233 100% 81%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 15% 96%;
+    --sidebar-accent-foreground: 230 35% 12%;
+    --sidebar-border: 220 15% 88%;
+    --sidebar-ring: 233 100% 81%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(233 100% 81%) 0%, hsl(231 57% 67%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 23% 97%) 100%);
+    --shadow-elegant: 0 10px 40px -10px hsl(233 100% 81% / .15);
+    --shadow-soft: 0 2px 8px -2px hsl(230 35% 12% / .08);
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+
+    /* Flags */
+    --flag-yellow: 45 93% 50%;
+    --flag-red: 0 84% 60%;
   }
 
-  /* ── Pautta Design System — Dark tokens ── */
   .dark {
-    --background: 230 35% 7%;           /* #0C0E18 — fundo principal */
-    --foreground: 220 23% 95%;          /* #EFF1F5 — texto principal */
-    --card: 230 30% 10%;                /* #121421 — card bg */
+    /* ── Pautta Dark Mode ── */
+    --background: 230 35% 7%;
+    --foreground: 220 23% 95%;
+    --card: 230 30% 10%;
     --card-foreground: 220 23% 95%;
     --popover: 230 30% 10%;
     --popover-foreground: 220 23% 95%;
-    --primary: 238 100% 74%;            /* #7B7BFF — roxo Pautta */
+    --primary: 233 100% 81%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 238 55% 57%;           /* #5656C7 */
+    --secondary: 231 57% 67%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 230 25% 15%;               /* nível muted */
-    --muted-foreground: 220 15% 65%;    /* #98A1B3 */
+    --muted: 230 25% 15%;
+    --muted-foreground: 220 15% 65%;
     --accent: 230 25% 12%;
     --accent-foreground: 220 23% 95%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 230 20% 20%;              /* #292C3D */
+    --warning: 33 100% 70%;
+    --warning-foreground: 33 90% 30%;
+    --border: 230 20% 20%;
     --input: 230 20% 20%;
-    --ring: 238 100% 74%;
+    --ring: 233 100% 81%;
+
+    /* Sidebar (dark) */
+    --sidebar-background: 230 30% 8%;
+    --sidebar-foreground: 220 23% 95%;
+    --sidebar-primary: 233 100% 81%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 230 25% 12%;
+    --sidebar-accent-foreground: 220 23% 95%;
+    --sidebar-border: 230 20% 20%;
+    --sidebar-ring: 233 100% 81%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(233 100% 81%) 0%, hsl(231 57% 67%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(230 30% 10%) 0%, hsl(230 35% 7%) 100%);
+    --shadow-elegant: 0 10px 40px -10px hsl(233 100% 81% / .25);
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / .3);
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+
+    /* Completed task */
+    --completed-task: 250 30% 20%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "cv11", "ss01";
+    font-optical-sizing: auto;
   }
 }
 
-/* ── Dashboard design tokens ── */
+/* ── Dashboard custom design tokens ── */
 :root {
-  /* Sidebar */
-  --sidebar-bg:          #080A13;
-  --sidebar-border:      rgba(255,255,255,0.06);
-  --sidebar-text:        rgba(200,208,228,0.38);
-  --sidebar-text-active: rgba(200,208,228,0.92);
-  --sidebar-hover:       rgba(255,255,255,0.04);
-  --sidebar-active:      rgba(108,99,255,0.10);
-  --sidebar-accent:      #6C63FF;
-  --sidebar-width:       220px;
+  /* Sidebar raw */
+  --sidebar-bg:          hsl(230 30% 8%);
+  --sidebar-border-c:    hsl(230 20% 18% / 1);
+  --sidebar-text:        hsl(220 15% 65% / 1);
+  --sidebar-text-active: hsl(220 23% 95% / 1);
+  --sidebar-hover:       hsl(230 25% 13% / 1);
+  --sidebar-active:      hsl(233 100% 81% / 0.10);
+  --sidebar-accent:      hsl(233 100% 81%);
+  --sidebar-width:       224px;
 
   /* Main areas */
-  --main-bg:      #07080F;
-  --card-bg:      #0D0F1A;
-  --card-border:  rgba(255,255,255,0.07);
-  --card-border-hover: rgba(108,99,255,0.35);
+  --main-bg:      hsl(230 35% 6%);
+  --card-bg:      hsl(230 30% 10%);
+  --card-border:  hsl(230 20% 20% / 1);
+  --card-border-hover: hsl(233 100% 81% / 0.35);
 
-  /* Accent */
-  --accent:       #6C63FF;
-  --accent-soft:  rgba(108,99,255,0.12);
-  --accent-glow:  rgba(108,99,255,0.20);
+  /* Accent — alinhado com --primary */
+  --accent-c:       hsl(233 100% 81%);
+  --accent-soft:    hsl(233 100% 81% / 0.12);
+  --accent-glow:    hsl(233 100% 81% / 0.22);
 
   /* Text */
-  --text-primary:   #EEF0F8;
-  --text-secondary: #8892A4;
-  --text-tertiary:  rgba(136,146,164,0.45);
+  --text-primary:   hsl(220 23% 95%);
+  --text-secondary: hsl(220 15% 55%);
+  --text-tertiary:  hsl(220 15% 40%);
 
   /* Status */
   --green:  #22C55E;
   --amber:  #F59E0B;
   --red:    #EF4444;
 
-  /* Misc */
-  --gradient-primary: linear-gradient(135deg, #6C63FF 0%, #9B8FFF 100%);
-  --shadow-card:      0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
-  --shadow-accent:    0 4px 20px rgba(108,99,255,0.25);
+  /* Shadows */
+  --shadow-accent: 0 4px 20px hsl(233 100% 81% / 0.25);
 }
 
-/* ── Form Player — Don theme ── */
+/* ── Card variants (Pautta) ── */
+.card-premium {
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border) / .5);
+  background-color: hsl(var(--card));
+  box-shadow: 0 2px 8px -2px hsl(var(--foreground) / .08);
+}
+.card-elevated {
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border) / .3);
+  background-color: hsl(var(--card));
+  box-shadow:
+    0 10px 40px -10px hsl(var(--primary) / .18),
+    0 2px 8px -2px hsl(0 0% 0% / .25);
+}
+
+/* ── Announcement signal effect ── */
+.announcement-signal {
+  position: relative;
+  overflow: hidden;
+}
+.announcement-signal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, hsl(233 100% 81% / .12) 0%, transparent 60%),
+    repeating-radial-gradient(circle at 50% 0%, transparent 0px, transparent 40px, hsl(233 100% 81% / .04) 41px, transparent 42px),
+    linear-gradient(180deg, hsl(233 100% 81% / .04) 0%, transparent 100%);
+  pointer-events: none;
+}
+.dark .announcement-signal::before {
+  background:
+    radial-gradient(ellipse at 50% 0%, hsl(233 100% 81% / .08) 0%, transparent 60%),
+    repeating-radial-gradient(circle at 50% 0%, transparent 0px, transparent 40px, hsl(233 100% 81% / .025) 41px, transparent 42px);
+}
+
+/* ── Gradient utilities ── */
+.gradient-primary { background: var(--gradient-primary); }
+.gradient-subtle  { background: var(--gradient-subtle); }
+
+/* ── Form Player ── */
 .don-player input,
 .don-player textarea {
   color: #ffffff !important;
   background: transparent !important;
-  caret-color: #7D83BD;
+  caret-color: hsl(233 100% 81%);
 }
 .don-player input::placeholder,
 .don-player textarea::placeholder {
-  color: rgba(125, 131, 189, 0.45) !important;
+  color: hsl(233 100% 81% / .4) !important;
   opacity: 1;
 }
+
+/* ── Scrollbar hide ── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Animations ── */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: .6; }
+  50%       { opacity: 1; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-up { animation: fade-up .3s cubic-bezier(.22,1,.36,1) both; }
+.animate-fade-in { animation: fade-in .25s ease both; }

@@ -86,7 +86,7 @@ export function SidebarUserMenu({ displayName, email, initials, avatarUrl }: Pro
 
         {open && (
           <div className="absolute bottom-full left-2 right-2 mb-1 rounded-xl shadow-2xl overflow-hidden z-50"
-            style={{ background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.08)" }}>
+            style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
             <div className="px-3 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <p className="text-xs font-medium text-white">{displayName}</p>
               <p className="text-[10px]" style={{ color: "var(--sidebar-text)" }}>{email}</p>

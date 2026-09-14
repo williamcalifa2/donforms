@@ -41,10 +41,10 @@ function NavItem({ href, label, Icon, exact = false }: {
       {active && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 rounded-full"
-          style={{ height: "60%", background: "var(--accent)" }}
+          style={{ height: "60%", background: "var(--accent-c)" }}
         />
       )}
-      <span style={{ color: active ? "var(--accent)" : "inherit", flexShrink: 0, lineHeight: 0 }}>
+      <span style={{ color: active ? "var(--accent-c)" : "inherit", flexShrink: 0, lineHeight: 0 }}>
         <Icon size={15} weight={active ? "duotone" : "regular"} />
       </span>
       <span style={{ color: "inherit" }}>{label}</span>
