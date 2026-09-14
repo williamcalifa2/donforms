@@ -48,36 +48,38 @@ async function acessarComToken(formData: FormData) {
     redirect(`/acesso?erro=token_expirado`);
   }
 
-  // Generate Supabase magic link for this email (silent — user never sees the email)
-  const callbackUrl = `${APP_URL}/auth/confirm?next=${encodeURIComponent(`/invite/${token}`)}`;
+  // ── Gera OTP via admin e verifica server-side (sem redirecionar para Supabase) ──
+  // generateLink retorna email_otp (raw OTP) que podemos verificar server-side
+  // com supabase.auth.verifyOtp — seta cookies de sessão diretamente.
+  const adminAuth = createAdminClient();
+  const { data: linkData, error: linkErr } = await adminAuth.auth.admin.generateLink({
+    type: "magiclink",
+    email: inv.email,
+    options: { redirectTo: `${APP_URL}/dashboard` }, // fallback; não será usado
+  });
 
-  let actionLink: string | null = null;
-
-  try {
-    const adminAuth = createAdminClient();
-    const { data: linkData, error: linkErr } = await adminAuth.auth.admin.generateLink({
-      type: "magiclink",
-      email: inv.email,
-      options: { redirectTo: callbackUrl },
-    });
-
-    if (linkErr || !linkData?.properties?.action_link) {
-      const detail = linkErr?.message ?? "no_action_link";
-      console.error("[acesso] generateLink error:", detail);
-      redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(detail)}`);
-    }
-
-    actionLink = linkData.properties.action_link;
-  } catch (e) {
-    // Next.js redirect() throws internally — must rethrow
-    if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
-    const detail = e instanceof Error ? e.message : String(e);
-    console.error("[acesso] admin error:", detail);
+  if (linkErr || !linkData?.properties?.email_otp) {
+    const detail = linkErr?.message ?? "no_otp";
+    console.error("[acesso] generateLink error:", detail);
     redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(detail)}`);
   }
 
-  // Redirect user to magic link → auto-authenticates → /invite/[token] → accept → /dashboard
-  redirect(actionLink!);
+  const otp = linkData.properties.email_otp;
+
+  // Verificar OTP server-side → seta sessão via cookies (SSR client)
+  const { error: verifyErr } = await supabase.auth.verifyOtp({
+    email: inv.email,
+    token: otp,
+    type: "email",
+  });
+
+  if (verifyErr) {
+    console.error("[acesso] verifyOtp error:", verifyErr.message);
+    redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(verifyErr.message)}`);
+  }
+
+  // Sessão setada via cookies — redireciona direto para aceitar convite
+  redirect(`/invite/${token}`);
 }
 
 interface Props {
