@@ -143,7 +143,7 @@ export async function POST(
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
       body: JSON.stringify({
-        from: "DonForms <notificacoes@donforms.vercel.app>",
+        from: `DonForms <${process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"}>`,
         to: [notifEmail],
         subject: `Nova resposta: ${form.title}`,
         html: `
