@@ -117,9 +117,9 @@ export function WorkspaceSwitcher({ current, options }: Props) {
               style={{
                 display: "flex", alignItems: "center", gap: 10,
                 width: "100%", padding: "9px 10px", borderRadius: 8,
-                background: opt.id === current.id ? "rgba(108,99,255,0.12)" : "none",
+                background: opt.id === current.id ? "var(--accent-soft)" : "none",
                 border: "none", cursor: "pointer", textAlign: "left",
-                color: opt.id === current.id ? "var(--accent)" : "var(--sidebar-text)",
+                color: opt.id === current.id ? "var(--accent-c)" : "var(--sidebar-text)",
                 transition: "background 0.12s",
               }}
               onMouseEnter={e => { if (opt.id !== current.id) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
@@ -132,7 +132,7 @@ export function WorkspaceSwitcher({ current, options }: Props) {
               ) : (
                 <div style={{
                   width: 24, height: 24, borderRadius: 6, flexShrink: 0,
-                  background: "linear-gradient(135deg,#6c63ff,#8b5cf6)",
+                  background: "var(--gradient-primary)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 9, fontWeight: 700, color: "#fff",
                 }}>

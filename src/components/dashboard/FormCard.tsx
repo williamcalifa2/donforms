@@ -132,7 +132,7 @@ export function FormCard({ form, appUrl }: Props) {
           }}
           maxLength={100}
           className="w-full font-semibold text-[15px] mb-1 bg-transparent border-b outline-none"
-          style={{ color: "var(--text-primary)", borderColor: "var(--accent)", letterSpacing: "-0.01em" }}
+          style={{ color: "var(--text-primary)", borderColor: "var(--accent-c)", letterSpacing: "-0.01em" }}
           autoFocus
         />
       ) : (
@@ -186,9 +186,9 @@ export function FormCard({ form, appUrl }: Props) {
         <Link
           href={`/dashboard/forms/${form.id}/edit`}
           className="flex-1 flex items-center justify-center h-8 rounded-lg text-[12px] font-semibold transition-all duration-150"
-          style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLAnchorElement).style.background = "rgba(108,99,255,0.20)";
+            (e.currentTarget as HTMLAnchorElement).style.background = "var(--accent-glow)";
             (e.currentTarget as HTMLAnchorElement).style.boxShadow = "var(--shadow-accent)";
           }}
           onMouseLeave={e => {
