@@ -60,20 +60,22 @@ async function acessarComToken(formData: FormData) {
     });
 
     if (linkErr || !linkData?.properties?.action_link) {
-      console.error("[acesso] generateLink error:", linkErr?.message);
-      redirect(`/acesso?erro=erro_interno`);
+      const detail = linkErr?.message ?? "no_action_link";
+      console.error("[acesso] generateLink error:", detail);
+      redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(detail)}`);
     }
 
     // Redirect user to magic link → auto-authenticates → /invite/[token] → accept → /dashboard
     redirect(linkData.properties.action_link);
   } catch (e) {
-    console.error("[acesso] admin error:", e);
-    redirect(`/acesso?erro=erro_interno`);
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error("[acesso] admin error:", detail);
+    redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(detail)}`);
   }
 }
 
 interface Props {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; detail?: string }>;
 }
 
 const ERROS: Record<string, string> = {
@@ -84,7 +86,7 @@ const ERROS: Record<string, string> = {
 };
 
 export default async function AcessoPage({ searchParams }: Props) {
-  const { erro } = await searchParams;
+  const { erro, detail } = await searchParams;
   const errMsg = erro ? (ERROS[erro] ?? "Erro desconhecido.") : null;
 
   return (
@@ -176,6 +178,11 @@ export default async function AcessoPage({ searchParams }: Props) {
             color: "#ff7070",
           }}>
             {errMsg}
+            {detail && (
+              <p style={{ margin: "6px 0 0", fontSize: 11, color: "#ff9090", fontFamily: "monospace", wordBreak: "break-all" }}>
+                {detail}
+              </p>
+            )}
           </div>
         )}
 
