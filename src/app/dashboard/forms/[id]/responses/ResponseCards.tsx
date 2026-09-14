@@ -108,12 +108,14 @@ function exportCsv(form: Form, filtered: Submission[]) {
 // ─── Filter types ─────────────────────────────────────────────────────────────
 type DatePreset = "all" | "today" | "7d" | "30d";
 type StatusFilter = "all" | "mql" | "not_mql";
+type ViewMode = "cards" | "list";
 
 // ─── Main component ───────────────────────────────────────────────────────────
 interface Props { form: Form; submissions: Submission[]; utmParam: string; }
 
 export function ResponseCards({ form, submissions, utmParam }: Props) {
   const [selected, setSelected] = useState<Submission | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
 
   // Filters
   const [search, setSearch]         = useState("");
@@ -237,11 +239,34 @@ export function ResponseCards({ form, submissions, utmParam }: Props) {
           {/* Spacer */}
           <div style={{ flex: 1 }} />
 
-          {/* Results count + export */}
+          {/* Results count + view toggle + export */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
               {filtered.length} de {submissions.length}
             </span>
+
+            {/* View toggle */}
+            <div style={{ display: "flex", borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {(["cards", "list"] as ViewMode[]).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  title={mode === "cards" ? "Cards" : "Lista"}
+                  style={{
+                    padding: "6px 10px", border: "none", cursor: "pointer", fontFamily: "inherit",
+                    background: viewMode === mode ? "rgba(125,131,189,0.2)" : "rgba(255,255,255,0.03)",
+                    color: viewMode === mode ? "#CBCDE5" : "rgba(255,255,255,0.3)",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {mode === "cards"
+                    ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/></svg>
+                    : <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><line x1="1" y1="4" x2="15" y2="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="1" y1="12" x2="15" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  }
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={() => exportCsv(form, filtered)}
               disabled={filtered.length === 0}
@@ -287,54 +312,103 @@ export function ResponseCards({ form, submissions, utmParam }: Props) {
       )}
 
       {/* ── Cards grid ───────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
-        {filtered.map((sub, i) => {
-          const mql = isMqlByField(sub.answers, inputFields);
-          const name = getLeadName(sub.answers, form);
-          const email = getLeadEmail(sub.answers, form);
-          const utmVal = (sub.metadata as Record<string, string>)[utmParam];
+      {viewMode === "cards" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
+          {filtered.map((sub) => {
+            const mql = isMqlByField(sub.answers, inputFields);
+            const name = getLeadName(sub.answers, form);
+            const email = getLeadEmail(sub.answers, form);
+            const utmVal = (sub.metadata as Record<string, string>)[utmParam];
 
-          return (
-            <button
-              key={sub.id}
-              onClick={() => setSelected(sub)}
-              style={{ background: "var(--card-bg)", border: `1px solid ${mql ? "rgba(74,222,128,0.2)" : "var(--card-border)"}`, borderRadius: "14px", padding: "14px 16px", textAlign: "left", cursor: "pointer", transition: "border-color 0.15s, box-shadow 0.15s" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = mql ? "rgba(74,222,128,0.4)" : "rgba(125,131,189,0.35)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(0,0,0,0.25)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = mql ? "rgba(74,222,128,0.2)" : "var(--card-border)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "8px" }}>
-                <span style={{ fontSize: "10px", fontWeight: 600, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.06)", borderRadius: "6px", padding: "2px 6px" }}>
-                  #{submissions.length - submissions.indexOf(sub)}
+            return (
+              <button
+                key={sub.id}
+                onClick={() => setSelected(sub)}
+                style={{ background: "var(--card-bg)", border: `1px solid ${mql ? "rgba(74,222,128,0.2)" : "var(--card-border)"}`, borderRadius: "14px", padding: "14px 16px", textAlign: "left", cursor: "pointer", transition: "border-color 0.15s, box-shadow 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = mql ? "rgba(74,222,128,0.4)" : "rgba(125,131,189,0.35)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(0,0,0,0.25)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = mql ? "rgba(74,222,128,0.2)" : "var(--card-border)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "8px" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 600, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.06)", borderRadius: "6px", padding: "2px 6px" }}>
+                    #{submissions.length - submissions.indexOf(sub)}
+                  </span>
+                  {mql && <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px", color: "#4ade80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: "20px", padding: "2px 8px" }}>MQL</span>}
+                </div>
+                <p style={{ fontSize: "14px", fontWeight: 600, color: "rgba(255,255,255,0.88)", marginBottom: "3px", lineHeight: 1.3 }}>{name}</p>
+                {email && <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginBottom: "10px" }}>{email}</p>}
+                {(() => {
+                  const preview = inputFields.filter(f => { const val = sub.answers[f.id]; return val && !(/nome|name/i.test(f.label)) && f.type !== "email"; }).slice(0, 2);
+                  if (preview.length === 0) return null;
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginBottom: "10px" }}>
+                      {preview.map(f => (
+                        <div key={f.id} style={{ display: "flex", gap: "6px", alignItems: "baseline" }}>
+                          <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", flexShrink: 0 }}>{f.label}:</span>
+                          <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(sub.answers[f.id])}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>{formatDate(sub.created_at)}</span>
+                  {utmVal && <span style={{ fontSize: "9px", fontFamily: "monospace", fontWeight: 600, color: "#7D83BD", background: "rgba(125,131,189,0.1)", borderRadius: "4px", padding: "2px 6px" }}>{utmVal}</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── List view ────────────────────────────────────────────────── */}
+      {viewMode === "list" && filtered.length > 0 && (
+        <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px", overflow: "hidden" }}>
+          {/* Header row */}
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr repeat(3, 1fr) 80px", gap: "8px", padding: "10px 16px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            {["Nome", "Email", utmParam, "Status", "Data", ""].map((h, i) => (
+              <span key={i} style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>{h}</span>
+            ))}
+          </div>
+          {/* Rows */}
+          {filtered.map((sub) => {
+            const mql = isMqlByField(sub.answers, inputFields);
+            const name = getLeadName(sub.answers, form);
+            const email = getLeadEmail(sub.answers, form);
+            const utmVal = (sub.metadata as Record<string, string>)[utmParam];
+
+            return (
+              <div
+                key={sub.id}
+                onClick={() => setSelected(sub)}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 1.5fr repeat(3, 1fr) 80px",
+                  gap: "8px",
+                  padding: "12px 16px",
+                  borderBottom: "1px solid rgba(255,255,255,0.05)",
+                  cursor: "pointer",
+                  transition: "background 0.12s",
+                  alignItems: "center",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.85)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email ?? "—"}</span>
+                <span style={{ fontSize: "11px", fontFamily: "monospace", color: "#7D83BD", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{utmVal ?? "—"}</span>
+                <span>
+                  {mql
+                    ? <span style={{ fontSize: "10px", fontWeight: 700, color: "#4ade80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: "20px", padding: "2px 8px" }}>MQL</span>
+                    : <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>Lead</span>
+                  }
                 </span>
-                {mql && <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px", color: "#4ade80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: "20px", padding: "2px 8px" }}>MQL</span>}
+                <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)" }}>{formatDate(sub.created_at)}</span>
+                <span style={{ fontSize: "11px", color: "rgba(125,131,189,0.6)", textAlign: "right" }}>Ver →</span>
               </div>
-
-              <p style={{ fontSize: "14px", fontWeight: 600, color: "rgba(255,255,255,0.88)", marginBottom: "3px", lineHeight: 1.3 }}>{name}</p>
-              {email && <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginBottom: "10px" }}>{email}</p>}
-
-              {(() => {
-                const preview = inputFields.filter(f => { const val = sub.answers[f.id]; return val && !(/nome|name/i.test(f.label)) && f.type !== "email"; }).slice(0, 2);
-                if (preview.length === 0) return null;
-                return (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginBottom: "10px" }}>
-                    {preview.map(f => (
-                      <div key={f.id} style={{ display: "flex", gap: "6px", alignItems: "baseline" }}>
-                        <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", flexShrink: 0 }}>{f.label}:</span>
-                        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(sub.answers[f.id])}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>{formatDate(sub.created_at)}</span>
-                {utmVal && <span style={{ fontSize: "9px", fontFamily: "monospace", fontWeight: 600, color: "#7D83BD", background: "rgba(125,131,189,0.1)", borderRadius: "4px", padding: "2px 6px" }}>{utmVal}</span>}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {selected && <LeadModal sub={selected} form={form} isMql={isMqlByField(selected.answers, inputFields)} onClose={() => setSelected(null)} />}
     </>
