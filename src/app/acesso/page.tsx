@@ -42,8 +42,8 @@ async function acessarComToken(formData: FormData) {
     redirect(`/acesso?erro=token_nao_encontrado`);
   }
 
-  // Check expiry (if set)
-  if (inv.expires_at && new Date(inv.expires_at) < new Date()) {
+  // Check expiry (2099 = permanent token, skip check)
+  if (inv.expires_at && inv.expires_at !== "2099-12-31T23:59:59+00:00" && new Date(inv.expires_at) < new Date()) {
     redirect(`/acesso?erro=token_expirado`);
   }
 

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       role,
       invited_by: user.id,
       token: cleanToken,
-      expires_at: null, // token permanente
+      expires_at: "2099-12-31T23:59:59Z", // token permanente (sem expiração real)
     })
     .select("token")
     .single();
