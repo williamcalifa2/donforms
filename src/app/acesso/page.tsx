@@ -4,6 +4,7 @@
  */
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,8 +78,44 @@ async function acessarComToken(formData: FormData) {
     redirect(`/acesso?erro=erro_interno&detail=${encodeURIComponent(verifyErr.message)}`);
   }
 
-  // Sessão setada via cookies — redireciona para route handler que aceita o convite
-  redirect(`/api/invite/accept?token=${encodeURIComponent(token)}`);
+  // ── Aceitar convite diretamente no Server Action (pode setar cookies) ────────
+  // Não usar redirect para Route Handler — client-side navigation não aplica Set-Cookie
+
+  // Pegar o usuário recém autenticado
+  const { data: { user: newUser } } = await supabase.auth.getUser();
+
+  if (newUser) {
+    // Aceitar o convite se ainda não foi aceito
+    if (!inv.accepted_at) {
+      await admin
+        .from("workspace_invitations")
+        .update({ accepted_at: new Date().toISOString() })
+        .eq("token", token);
+
+      await admin
+        .from("workspace_members")
+        .upsert(
+          {
+            workspace_id: inv.workspace_id,
+            user_id: newUser.id,
+            role: inv.role ?? "member",
+            joined_at: new Date().toISOString(),
+          },
+          { onConflict: "workspace_id,user_id" }
+        );
+    }
+
+    // Setar cookie _df_wid no Server Action (permitido!)
+    const cookieStore = await cookies();
+    cookieStore.set("_df_wid", inv.workspace_id, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 90,
+    });
+  }
+
+  redirect("/dashboard?welcome=1");
 }
 
 interface Props {
