@@ -31,11 +31,11 @@ async function acessarComToken(formData: FormData) {
   // Use admin client to bypass RLS for token lookup (user is not authenticated yet)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
+  // Não filtra por accepted_at — token permanente permite relogin mesmo após aceito
   const { data: inv, error: invErr } = await admin
     .from("workspace_invitations")
-    .select("email, token, workspace_id, role, expires_at")
+    .select("email, token, workspace_id, role, expires_at, accepted_at")
     .eq("token", token)
-    .is("accepted_at", null)
     .maybeSingle();
 
   if (invErr || !inv) {
