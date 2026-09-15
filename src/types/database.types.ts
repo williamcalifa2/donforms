@@ -121,12 +121,31 @@ export interface WebhookLog {
   created_at: string;
 }
 
+/** Granular per-user permissions. null = derive from role preset. */
+export interface WorkspacePermissions {
+  // Formulários
+  forms_view: boolean;
+  forms_create: boolean;
+  forms_edit: boolean;
+  forms_publish: boolean;
+  forms_delete: boolean;
+  // Respostas
+  responses_view: boolean;
+  responses_export: boolean;
+  // Analytics
+  analytics_view: boolean;
+  // Equipe
+  team_manage: boolean;
+}
+
 export interface WorkspaceMember {
   workspace_id: string;
   user_id: string;
   role: WorkspaceRole;
   invited_by: string | null;
   joined_at: string;
+  /** Custom permissions override. If null, permissions are derived from role. */
+  permissions: WorkspacePermissions | null;
 }
 
 export interface WorkspaceInvitation {

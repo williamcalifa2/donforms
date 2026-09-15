@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import { TeamSettings } from "@/components/dashboard/TeamSettings";
 import type { Metadata } from "next";
-import type { WorkspaceInvitation } from "@/types/database.types";
+import type { WorkspaceInvitation, WorkspacePermissions } from "@/types/database.types";
 
 export const metadata: Metadata = { title: "Equipe" };
 
@@ -47,7 +47,7 @@ export default async function TeamPage() {
   // ── Workspace members (everyone except the owner) ──────────────────────
   const { data: rawMembers } = await admin
     .from("workspace_members")
-    .select("workspace_id, user_id, role, joined_at")
+    .select("workspace_id, user_id, role, joined_at, permissions")
     .eq("workspace_id", ownerId);
 
   const memberList = rawMembers ?? [];
@@ -55,10 +55,11 @@ export default async function TeamPage() {
   type MemberRow = {
     workspace_id: string; user_id: string; role: string;
     joined_at: string; name: string; email: string; avatar_url: string | null;
+    permissions: WorkspacePermissions | null;
   };
 
   const members: MemberRow[] = await Promise.all(
-    memberList.map(async (m: { workspace_id: string; user_id: string; role: string; joined_at: string }) => {
+    memberList.map(async (m: { workspace_id: string; user_id: string; role: string; joined_at: string; permissions: WorkspacePermissions | null }) => {
       const { data: prof } = await admin
         .from("profiles")
         .select("name, email, avatar_url")
@@ -69,6 +70,7 @@ export default async function TeamPage() {
         name: prof?.name ?? "",
         email: prof?.email ?? "",
         avatar_url: prof?.avatar_url ?? null,
+        permissions: m.permissions ?? null,
       };
     })
   );

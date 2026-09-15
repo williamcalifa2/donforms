@@ -87,8 +87,8 @@ export async function duplicateForm(formId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const { ownerId, role } = await resolveWorkspaceContext(user.id);
-  if (!canEditForms(role)) return { error: "Sem permissão para duplicar formulários." };
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(permissions)) return { error: "Sem permissão para duplicar formulários." };
   const client = await dbFor(ownerId, user.id);
 
   const { data: original, error: fetchError } = await client
@@ -131,8 +131,8 @@ export async function saveForm(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const { ownerId, role } = await resolveWorkspaceContext(user.id);
-  if (!canEditForms(role)) return { error: "Sem permissão para editar formulários." };
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(permissions)) return { error: "Sem permissão para editar formulários." };
   const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
@@ -209,8 +209,8 @@ export async function togglePublish(formId: string, publish: boolean) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const { ownerId, role } = await resolveWorkspaceContext(user.id);
-  if (!canEditForms(role)) return { error: "Sem permissão para publicar formulários." };
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(permissions)) return { error: "Sem permissão para publicar formulários." };
   const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
@@ -231,8 +231,8 @@ export async function renameForm(formId: string, title: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const { ownerId, role } = await resolveWorkspaceContext(user.id);
-  if (!canEditForms(role)) return { error: "Sem permissão para renomear formulários." };
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(permissions)) return { error: "Sem permissão para renomear formulários." };
   const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
@@ -270,8 +270,8 @@ export async function deleteForm(formId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { ownerId, role } = await resolveWorkspaceContext(user.id);
-  if (!canDeleteForms(role)) redirect("/dashboard?error=Sem+permiss%C3%A3o+para+deletar+formul%C3%A1rios");
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
+  if (!canDeleteForms(permissions)) redirect("/dashboard?error=Sem+permiss%C3%A3o+para+deletar+formul%C3%A1rios");
   const client = await dbFor(ownerId, user.id);
   await client.from("forms").delete().eq("id", formId).eq("user_id", ownerId);
 
