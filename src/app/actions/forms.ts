@@ -31,7 +31,8 @@ export async function createForm() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const client = await db();
+  const { ownerId } = await resolveWorkspaceContext(user.id);
+  const client = await dbFor(ownerId, user.id);
 
   // Garante que profile existe (pode falhar silenciosamente em novos users)
   const { error: profileError } = await client.from("profiles").upsert(
@@ -54,7 +55,7 @@ export async function createForm() {
   const { data: form, error } = await client
     .from("forms")
     .insert({
-      user_id: user.id,
+      user_id: ownerId,
       title: "Novo Formulário",
       slug: slug ?? `form-${Date.now()}`,
       settings: {
@@ -105,7 +106,7 @@ export async function duplicateForm(formId: string) {
   });
 
   const { error: insertError } = await client.from("forms").insert({
-    user_id: user.id,
+    user_id: ownerId,
     title: `${original.title} (cópia)`,
     slug: newSlug ?? `form-copy-${Date.now()}`,
     fields: original.fields,
@@ -251,8 +252,9 @@ export async function updateSubmissionStatus(submissionId: string, status: strin
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const client = await db();
-  // RLS garante que só o dono do form pode atualizar
+  const { ownerId } = await resolveWorkspaceContext(user.id);
+  // Use admin/dbFor so members can update kanban cards in the owner's workspace
+  const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("submissions")
     .update({ status })

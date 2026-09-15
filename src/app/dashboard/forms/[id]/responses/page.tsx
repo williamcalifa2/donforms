@@ -35,7 +35,9 @@ export default async function ResponsesPage({ params }: Props) {
 
   if (error || !form) notFound();
 
-  const { data: submissions } = await supabase
+  // Use admin client — RLS blocks members from reading submissions they don't own
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: submissions } = await (createAdminClient() as any)
     .from("submissions")
     .select("*")
     .eq("form_id", id)

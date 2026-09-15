@@ -21,9 +21,6 @@ export default async function AnalyticsPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = supabase as any;
-
   const ownerId = await getEffectiveOwnerId(user.id);
 
   // Use admin client to bypass RLS — membership already verified in getEffectiveOwnerId
@@ -37,12 +34,16 @@ export default async function AnalyticsPage({ params }: Props) {
 
   if (error || !form) notFound();
 
-  const { data: events } = await client
+  // Use admin client — RLS blocks members from reading data they don't own
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adminClient = createAdminClient() as any;
+
+  const { data: events } = await adminClient
     .from("form_events")
     .select("*")
     .eq("form_id", id) as { data: FormEvent[] | null };
 
-  const { data: submissions } = await client
+  const { data: submissions } = await adminClient
     .from("submissions")
     .select("id, metadata, answers")
     .eq("form_id", id) as { data: { id: string; metadata: Record<string, string> | null; answers: Record<string, string | string[] | number> | null }[] | null };

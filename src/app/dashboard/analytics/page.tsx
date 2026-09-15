@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import type { Form } from "@/types/database.types";
 import type { Metadata } from "next";
 
@@ -71,13 +73,16 @@ export default async function AnalyticsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = supabase as any;
+  const { ownerId } = await resolveWorkspaceContext(user.id);
 
-  const { data: formsData } = await client
+  // Use admin client — RLS blocks members from reading owner's forms/events
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adminClient = createAdminClient() as any;
+
+  const { data: formsData } = await adminClient
     .from("forms")
     .select("id, title, slug, is_published, fields, created_at")
-    .eq("user_id", user.id)
+    .eq("user_id", ownerId)
     .order("created_at", { ascending: false }) as { data: Form[] | null };
 
   const forms = formsData ?? [];
@@ -85,7 +90,7 @@ export default async function AnalyticsPage() {
 
   let allEvents: FormEvent[] = [];
   if (formIds.length > 0) {
-    const { data } = await client
+    const { data } = await adminClient
       .from("form_events")
       .select("id, form_id, event_type, question_index, session_id, created_at")
       .in("form_id", formIds)
