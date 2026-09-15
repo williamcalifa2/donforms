@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-xl font-semibold" style={{ color: "rgba(255,255,255,0.92)" }}>Configurações</h1>
-        <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>Personalize seu workspace</p>
+        <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>Nome, logo e preferências do seu workspace</p>
       </div>
       <WorkspaceSettingsForm profile={profile} />
     </div>

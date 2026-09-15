@@ -123,10 +123,10 @@ interface Props {
 }
 
 const ERROS: Record<string, string> = {
-  token_invalido: "Código inválido. Digite os 6 dígitos do email.",
-  token_nao_encontrado: "Token não encontrado ou já foi usado.",
-  token_expirado: "Este token expirou. Peça um novo convite.",
-  erro_interno: "Erro ao processar. Tente novamente.",
+  token_invalido: "Código inválido. Coloca os 6 dígitos certinho.",
+  token_nao_encontrado: "Código não encontrado. Verifica se digitou certo.",
+  token_expirado: "Esse código expirou. Pede um novo convite pro admin.",
+  erro_interno: "Algo deu errado. Tenta de novo.",
 };
 
 export default async function AcessoPage({ searchParams }: Props) {
@@ -199,7 +199,7 @@ export default async function AcessoPage({ searchParams }: Props) {
           margin: "0 0 8px",
           letterSpacing: "-0.3px",
         }}>
-          Acessar workspace
+          Entrar no workspace
         </h1>
         <p style={{
           fontSize: 14,
@@ -207,7 +207,7 @@ export default async function AcessoPage({ searchParams }: Props) {
           margin: "0 0 28px",
           lineHeight: 1.6,
         }}>
-          Digite o código de 6 dígitos que você recebeu no email do convite.
+          Cola o código de 6 dígitos que veio no e-mail de convite.
         </p>
 
         {/* Error */}
@@ -241,7 +241,7 @@ export default async function AcessoPage({ searchParams }: Props) {
               letterSpacing: "0.08em",
               marginBottom: 8,
             }}>
-              Token de acesso
+              Código
             </label>
             <input
               name="token"
@@ -299,7 +299,7 @@ export default async function AcessoPage({ searchParams }: Props) {
           textAlign: "center",
           lineHeight: 1.6,
         }}>
-          Não tem o código? Peça um convite ao administrador do workspace.
+          Não tem o código? Pede pro admin te mandar um convite.
         </p>
       </div>
     </div>

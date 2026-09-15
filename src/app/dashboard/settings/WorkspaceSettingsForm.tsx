@@ -44,7 +44,7 @@ export function WorkspaceSettingsForm({ profile }: Props) {
     <div className="space-y-6">
       {/* Workspace */}
       <div className="rounded-xl p-5 space-y-5" style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)" }}>
-        <h2 className="text-sm font-semibold">Identidade do workspace</h2>
+        <h2 className="text-sm font-semibold">Visual do workspace</h2>
 
         {/* Logo */}
         <div className="space-y-2">

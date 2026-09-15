@@ -84,7 +84,7 @@ export function WorkspaceSwitcher({ current, options }: Props) {
             {switching ? "Trocando…" : current.name}
           </div>
           <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>
-            {current.role ? `Membro · ${current.role}` : "Workspace"}
+            {current.role ? current.role : "Workspace"}
           </div>
         </div>
 
@@ -144,7 +144,7 @@ export function WorkspaceSwitcher({ current, options }: Props) {
                   {opt.name}
                 </div>
                 <div style={{ fontSize: 10, opacity: 0.45, marginTop: 1 }}>
-                  {opt.role ? opt.role : "Seu workspace"}
+                  {opt.role ? opt.role : "seu workspace"}
                 </div>
               </div>
               {opt.id === current.id && (

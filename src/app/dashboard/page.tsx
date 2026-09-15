@@ -55,7 +55,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           </h1>
           <p className="text-[13px] mt-1" style={{ color: "var(--text-secondary)" }}>
             {list.length === 0
-              ? "Crie seu primeiro formulário inteligente"
+              ? "Seu workspace tá vazio ainda"
               : `${list.length} formulário${list.length > 1 ? "s" : ""} no workspace`}
           </p>
         </div>
@@ -79,10 +79,10 @@ export default async function DashboardPage({ searchParams }: Props) {
           </div>
           <div className="space-y-1">
             <p className="font-medium text-sm" style={{ color: "var(--text-primary)" }}>
-              Nenhum formulário ainda
+              Nenhum formulário aqui ainda
             </p>
             <p className="text-xs max-w-xs" style={{ color: "var(--text-tertiary)" }}>
-              Crie formulários conversacionais e compartilhe com o mundo.
+              Arraste campos, configure e publique. Menos de 5 minutos.
             </p>
           </div>
           <NewFormButton />

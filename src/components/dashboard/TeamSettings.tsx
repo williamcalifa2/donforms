@@ -200,7 +200,7 @@ function PermissionEditor({
         {/* Role selector */}
         <div style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
-            Role base
+            Nível de acesso
           </p>
           <div style={{ display: "flex", gap: 6 }}>
             {(canSetAdmin ? ["viewer", "member", "admin"] : ["viewer", "member"]).map(r => (
@@ -221,7 +221,7 @@ function PermissionEditor({
             ))}
           </div>
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>
-            Selecionar role aplica o preset padrão abaixo. Você pode ajustar individualmente.
+            Mudar o nível aplica as permissões padrão. Ajuste cada item abaixo se precisar.
           </p>
         </div>
 
@@ -251,7 +251,7 @@ function PermissionEditor({
 
         {isCustom() && (
           <div style={{ marginBottom: 12, padding: "6px 10px", borderRadius: 7, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)", fontSize: 11, color: "#fbbf24" }}>
-            ⚡ Permissões personalizadas — diferentes do preset do role
+            ⚡ Customizado — diferente do padrão desse nível
           </div>
         )}
 
@@ -394,16 +394,16 @@ export function TeamSettings({
       {/* Read-only notice */}
       {!canManage && (
         <div style={{ padding: "10px 16px", borderRadius: 10, background: "rgba(158,168,255,0.06)", border: "1px solid rgba(158,168,255,0.15)", fontSize: 12, color: "rgba(158,168,255,0.7)" }}>
-          Você tem acesso de <strong style={{ color: "#9ea8ff" }}>{ROLE_LABELS[currentUserRole]}</strong> — apenas admins e o owner podem gerenciar membros.
+          Você entrou com acesso de <strong style={{ color: "#9ea8ff" }}>{ROLE_LABELS[currentUserRole]}</strong>. Só admins e o dono do workspace gerenciam a equipe.
         </div>
       )}
 
       {/* Invite form */}
       {canManage && (
         <section>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>Convidar membro</h2>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>Adicionar alguém</h2>
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>
-            O convidado recebe o token por email e usa em <strong style={{ color: "rgba(255,255,255,0.5)" }}>/acesso</strong>.
+            A pessoa recebe o código no e-mail e entra pelo <strong style={{ color: "rgba(255,255,255,0.5)" }}>/acesso</strong>.
           </p>
 
           <form onSubmit={sendInvite} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -445,7 +445,7 @@ export function TeamSettings({
               </button>
             </div>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", margin: 0 }}>
-              Token de 6 dígitos — use &quot;Gerar&quot; para criar automaticamente. Você poderá ajustar as permissões depois.
+              Use &quot;Gerar&quot; pra criar um código aleatório. Permissões podem ser ajustadas depois.
             </p>
           </form>
 
@@ -459,7 +459,7 @@ export function TeamSettings({
                 {emailSent === false && <span style={{ fontSize: 11, color: "#fbbf24" }}>· email não enviado</span>}
               </div>
               <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(0,0,0,0.3)", border: "1px solid rgba(158,168,255,0.15)" }}>
-                <p style={{ margin: "0 0 6px", fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Token de acesso</p>
+                <p style={{ margin: "0 0 6px", fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Código de acesso</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <code style={{ flex: 1, fontSize: 18, fontWeight: 700, color: "var(--accent-c)", fontFamily: "monospace", letterSpacing: "0.05em" }}>{sentToken}</code>
                   <button onClick={copyToken} style={{ padding: "5px 12px", borderRadius: 8, background: tokenCopied ? "rgba(52,211,153,0.15)" : "rgba(158,168,255,0.12)", border: `1px solid ${tokenCopied ? "rgba(52,211,153,0.3)" : "rgba(158,168,255,0.2)"}`, color: tokenCopied ? "#34d399" : "var(--accent-c)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
@@ -502,7 +502,7 @@ export function TeamSettings({
                 </td>
                 <td style={{ ...cellStyle, width: 110 }}><RoleBadge role="owner" /></td>
                 <td style={{ ...cellStyle, width: 120, textAlign: "right" }}>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)" }}>Todas as permissões</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)" }}>Acesso total</span>
                 </td>
                 <td style={{ ...cellStyle, width: 50 }} />
               </tr>
@@ -608,11 +608,11 @@ export function TeamSettings({
       {/* Role legend */}
       <section style={{ paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", lineHeight: 1.8 }}>
-          <strong style={{ color: "#fbbf24" }}>Owner</strong> — controle total, imutável.{" "}
-          <strong style={{ color: "#c084fc" }}>Admin</strong> — tudo + gerencia equipe.{" "}
-          <strong style={{ color: "#818cf8" }}>Membro</strong> — edita e publica formulários.{" "}
-          <strong style={{ color: "#94a3b8" }}>Visualizador</strong> — apenas leitura.{" "}
-          <strong style={{ color: "#fbbf24" }}>⚡ Custom</strong> — permissões personalizadas.
+          <strong style={{ color: "#fbbf24" }}>Owner</strong> — tudo, sempre, imutável.{" "}
+          <strong style={{ color: "#c084fc" }}>Admin</strong> — tudo + gerencia a equipe.{" "}
+          <strong style={{ color: "#818cf8" }}>Membro</strong> — cria, edita e publica.{" "}
+          <strong style={{ color: "#94a3b8" }}>Visualizador</strong> — só lê.{" "}
+          <strong style={{ color: "#fbbf24" }}>⚡ Custom</strong> — permissões ajustadas manualmente.
         </p>
       </section>
     </div>
