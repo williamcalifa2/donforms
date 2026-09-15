@@ -33,7 +33,7 @@ export default async function PreviewPage({ params }: Props) {
     <div className="relative">
       {/* Preview banner */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-amber-400 text-amber-900 text-xs font-medium text-center py-1.5 flex items-center justify-center gap-2">
-        <span>👁 Modo preview — respostas não serão salvas</span>
+        <span>👁 Modo preview. Respostas não são salvas.</span>
         <a
           href={`/dashboard/forms/${id}/edit`}
           className="underline hover:no-underline"

@@ -69,7 +69,7 @@ export function ShareModal({ slug, appUrl, isPublished }: Props) {
             {!isPublished && (
               <div className="rounded-lg px-3 py-2.5 text-xs flex items-center gap-2" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.18)", color: "#fbbf24" }}>
                 <span>⚠</span>
-                <span>Rascunho — publique para ativar o link.</span>
+                <span>Rascunho. Publique pra ativar o link.</span>
               </div>
             )}
 

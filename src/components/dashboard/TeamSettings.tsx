@@ -251,7 +251,7 @@ function PermissionEditor({
 
         {isCustom() && (
           <div style={{ marginBottom: 12, padding: "6px 10px", borderRadius: 7, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)", fontSize: 11, color: "#fbbf24" }}>
-            ⚡ Customizado — diferente do padrão desse nível
+            ⚡ Customizado (diferente do padrão desse nível)
           </div>
         )}
 
@@ -608,11 +608,11 @@ export function TeamSettings({
       {/* Role legend */}
       <section style={{ paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", lineHeight: 1.8 }}>
-          <strong style={{ color: "#fbbf24" }}>Owner</strong> — tudo, sempre, imutável.{" "}
-          <strong style={{ color: "#c084fc" }}>Admin</strong> — tudo + gerencia a equipe.{" "}
-          <strong style={{ color: "#818cf8" }}>Membro</strong> — cria, edita e publica.{" "}
-          <strong style={{ color: "#94a3b8" }}>Visualizador</strong> — só lê.{" "}
-          <strong style={{ color: "#fbbf24" }}>⚡ Custom</strong> — permissões ajustadas manualmente.
+          <strong style={{ color: "#fbbf24" }}>Owner</strong>: tudo, sempre, imutável.{" "}
+          <strong style={{ color: "#c084fc" }}>Admin</strong>: tudo + gerencia a equipe.{" "}
+          <strong style={{ color: "#818cf8" }}>Membro</strong>: cria, edita e publica.{" "}
+          <strong style={{ color: "#94a3b8" }}>Visualizador</strong>: só lê.{" "}
+          <strong style={{ color: "#fbbf24" }}>⚡ Custom</strong>: permissões ajustadas manualmente.
         </p>
       </section>
     </div>

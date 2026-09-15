@@ -174,7 +174,7 @@ const INTEGRATIONS: Integration[] = [
     steps: [
       'No Slack: Apps → Incoming Webhooks → "Add to Slack"',
       "Escolha o canal e copie a URL gerada",
-      "Cole a URL abaixo e salve — pronto!",
+      "Cole a URL abaixo e salve. Pronto!",
     ],
     docs: "https://api.slack.com/messaging/webhooks",
   },
