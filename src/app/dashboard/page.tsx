@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import { NewFormButton } from "@/components/dashboard/NewFormButton";
 import { FormCard } from "@/components/dashboard/FormCard";
 import type { FormWithCount } from "@/types/database.types";
@@ -21,28 +22,17 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   if (!user) redirect("/login");
 
-  // Determine active workspace from cookie (validated against memberships)
-  const cookieStore = await cookies();
-  const wid = cookieStore.get("_df_wid")?.value;
+  // Resolve active workspace (verifies membership, returns effective owner id)
+  const { ownerId } = await resolveWorkspaceContext(user.id);
 
+  // Use admin client to bypass RLS — forms belong to workspace owner, not the visiting member
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = supabase as any;
+  const adminClient = createAdminClient() as any;
 
-  let activeWorkspaceId = user.id;
-  if (wid && wid !== user.id) {
-    const { data: membership } = await client
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("workspace_id", wid)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (membership) activeWorkspaceId = wid;
-  }
-
-  const { data: forms } = await supabase
+  const { data: forms } = await adminClient
     .from("forms_with_submission_count")
     .select("*")
-    .eq("user_id", activeWorkspaceId)
+    .eq("user_id", ownerId)
     .order("created_at", { ascending: false });
 
   const list = (forms ?? []) as FormWithCount[];

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getEffectiveOwnerId } from "@/lib/workspace/getWorkspaceOwner";
+import { resolveWorkspaceContext, canEditForms, canDeleteForms } from "@/lib/workspace/getWorkspaceOwner";
 import type { FormField, FormSettings } from "@/types/database.types";
 
 // Helper: supabase client sem type-checking de tabela
@@ -19,7 +19,7 @@ async function db() {
 function dbFor(ownerId: string, userId: string): any {
   if (ownerId === userId) return createClient().then(c => c as any);
   // Member accessing another workspace — use admin to bypass RLS
-  // (membership already verified by getEffectiveOwnerId)
+  // (membership already verified by resolveWorkspaceContext)
   return Promise.resolve(createAdminClient() as any);
 }
 
@@ -87,7 +87,8 @@ export async function duplicateForm(formId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const ownerId = await getEffectiveOwnerId(user.id);
+  const { ownerId, role } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(role)) return { error: "Sem permissão para duplicar formulários." };
   const client = await dbFor(ownerId, user.id);
 
   const { data: original, error: fetchError } = await client
@@ -130,7 +131,8 @@ export async function saveForm(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const ownerId = await getEffectiveOwnerId(user.id);
+  const { ownerId, role } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(role)) return { error: "Sem permissão para editar formulários." };
   const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
@@ -207,7 +209,8 @@ export async function togglePublish(formId: string, publish: boolean) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const ownerId = await getEffectiveOwnerId(user.id);
+  const { ownerId, role } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(role)) return { error: "Sem permissão para publicar formulários." };
   const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
@@ -228,7 +231,8 @@ export async function renameForm(formId: string, title: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
-  const ownerId = await getEffectiveOwnerId(user.id);
+  const { ownerId, role } = await resolveWorkspaceContext(user.id);
+  if (!canEditForms(role)) return { error: "Sem permissão para renomear formulários." };
   const client = await dbFor(ownerId, user.id);
   const { error } = await client
     .from("forms")
@@ -266,7 +270,8 @@ export async function deleteForm(formId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const ownerId = await getEffectiveOwnerId(user.id);
+  const { ownerId, role } = await resolveWorkspaceContext(user.id);
+  if (!canDeleteForms(role)) redirect("/dashboard?error=Sem+permiss%C3%A3o+para+deletar+formul%C3%A1rios");
   const client = await dbFor(ownerId, user.id);
   await client.from("forms").delete().eq("id", formId).eq("user_id", ownerId);
 

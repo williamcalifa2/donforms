@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import { TeamSettings } from "@/components/dashboard/TeamSettings";
 import type { Metadata } from "next";
 import type { WorkspaceInvitation } from "@/types/database.types";
@@ -12,25 +14,52 @@ export default async function TeamPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = supabase as any;
+  const { ownerId, isOwner, role } = await resolveWorkspaceContext(user.id);
 
-  // Fetch workspace members
-  const { data: rawMembers } = await client
+  // Use admin client — bypass RLS for cross-workspace reads
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = createAdminClient() as any;
+
+  // ── Workspace owner profile ─────────────────────────────────────────────
+  let ownerProfile: { name: string; email: string; avatar_url: string | null } = {
+    name: user.user_metadata?.name ?? user.email?.split("@")[0] ?? "Dono",
+    email: user.email ?? "",
+    avatar_url: null,
+  };
+
+  if (!isOwner) {
+    const { data: op } = await admin
+      .from("profiles")
+      .select("name, email, avatar_url")
+      .eq("id", ownerId)
+      .single();
+    if (op) ownerProfile = op;
+  } else {
+    // Fetch own profile for accurate name/avatar
+    const { data: op } = await admin
+      .from("profiles")
+      .select("name, email, avatar_url")
+      .eq("id", user.id)
+      .single();
+    if (op) ownerProfile = op;
+  }
+
+  // ── Workspace members (everyone except the owner) ──────────────────────
+  const { data: rawMembers } = await admin
     .from("workspace_members")
-    .select("workspace_id, user_id, role, joined_at, invited_by")
-    .eq("workspace_id", user.id);
+    .select("workspace_id, user_id, role, joined_at")
+    .eq("workspace_id", ownerId);
 
   const memberList = rawMembers ?? [];
 
-  // Fetch profiles for each member
   type MemberRow = {
     workspace_id: string; user_id: string; role: string;
     joined_at: string; name: string; email: string; avatar_url: string | null;
   };
+
   const members: MemberRow[] = await Promise.all(
     memberList.map(async (m: { workspace_id: string; user_id: string; role: string; joined_at: string }) => {
-      const { data: prof } = await client
+      const { data: prof } = await admin
         .from("profiles")
         .select("name, email, avatar_url")
         .eq("id", m.user_id)
@@ -44,16 +73,23 @@ export default async function TeamPage() {
     })
   );
 
-  // Fetch pending invitations
-  const { data: rawInvitations } = await client
+  // ── Pending invitations ────────────────────────────────────────────────
+  // Filter: expires_at that is NOT the permanent sentinel (2099) and is in the past → expired
+  // We show all non-accepted (permanent tokens show as pending until accepted)
+  const { data: rawInvitations } = await admin
     .from("workspace_invitations")
     .select("*")
-    .eq("workspace_id", user.id)
+    .eq("workspace_id", ownerId)
     .is("accepted_at", null)
-    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false });
 
-  const invitations: WorkspaceInvitation[] = rawInvitations ?? [];
+  // Filter out truly expired (non-2099) invites
+  const now = new Date();
+  const invitations: WorkspaceInvitation[] = (rawInvitations ?? []).filter((inv: WorkspaceInvitation) => {
+    if (!inv.expires_at) return true;
+    if (inv.expires_at.startsWith("2099")) return true;
+    return new Date(inv.expires_at) > now;
+  });
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -66,7 +102,10 @@ export default async function TeamPage() {
       <TeamSettings
         members={members}
         invitations={invitations}
-        ownerId={user.id}
+        ownerId={ownerId}
+        currentUserId={user.id}
+        currentUserRole={role}
+        ownerProfile={ownerProfile}
       />
     </div>
   );
