@@ -29,11 +29,11 @@ const ROLE_LABELS: Record<string, string> = {
   owner: "Owner", admin: "Admin", member: "Membro", viewer: "Visualizador",
 };
 
-const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
-  owner:  { bg: "rgba(251,191,36,0.12)",  text: "#fbbf24" },
-  admin:  { bg: "rgba(168,85,247,0.12)",  text: "#c084fc" },
-  member: { bg: "rgba(99,102,241,0.12)",  text: "#818cf8" },
-  viewer: { bg: "rgba(148,163,184,0.1)",  text: "#94a3b8" },
+const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  owner:  { bg: "rgba(251,191,36,0.1)",   text: "#fbbf24", border: "rgba(251,191,36,0.25)" },
+  admin:  { bg: "rgba(192,132,252,0.1)",  text: "#c084fc", border: "rgba(192,132,252,0.25)" },
+  member: { bg: "rgba(129,140,248,0.1)",  text: "#818cf8", border: "rgba(129,140,248,0.25)" },
+  viewer: { bg: "rgba(148,163,184,0.08)", text: "#94a3b8", border: "rgba(148,163,184,0.2)" },
 };
 
 const PERM_GROUPS: { label: string; perms: { key: keyof WorkspacePermissions; label: string }[] }[] = [
@@ -56,41 +56,48 @@ const PERM_GROUPS: { label: string; perms: { key: keyof WorkspacePermissions; la
   },
   {
     label: "Analytics",
-    perms: [
-      { key: "analytics_view", label: "Ver analytics" },
-    ],
+    perms: [{ key: "analytics_view", label: "Ver analytics" }],
   },
   {
     label: "Equipe",
-    perms: [
-      { key: "team_manage", label: "Gerenciar membros" },
-    ],
+    perms: [{ key: "team_manage", label: "Gerenciar membros" }],
   },
 ];
 
 function RoleBadge({ role }: { role: string }) {
   const c = ROLE_COLORS[role] ?? ROLE_COLORS.viewer;
   return (
-    <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: c.bg, color: c.text, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+    <span style={{
+      display: "inline-flex", alignItems: "center",
+      padding: "3px 9px", borderRadius: 20,
+      fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", whiteSpace: "nowrap",
+      background: c.bg, color: c.text, border: `1px solid ${c.border}`,
+    }}>
       {ROLE_LABELS[role] ?? role}
     </span>
   );
 }
 
-function Avatar({ name, avatarUrl, size = 32 }: { name: string; avatarUrl: string | null; size?: number }) {
+function Avatar({ name, avatarUrl, size = 36 }: { name: string; avatarUrl: string | null; size?: number }) {
   const initials = (name || "?").split(" ").slice(0, 2).map((n: string) => n[0]).join("").toUpperCase();
   if (avatarUrl) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={avatarUrl} alt={name} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />;
   }
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", background: "linear-gradient(135deg,#6c63ff,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size < 36 ? 11 : 14, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: "linear-gradient(135deg,#6c63ff 0%,#8b5cf6 100%)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size <= 32 ? 11 : 13, fontWeight: 700, color: "#fff",
+      letterSpacing: "0.02em",
+    }}>
       {initials}
     </div>
   );
 }
 
-// ─── Permission editor for a single member ────────────────────────────────────
+// ─── Permission modal ─────────────────────────────────────────────────────────
 function PermissionEditor({
   member,
   canSetAdmin,
@@ -118,8 +125,7 @@ function PermissionEditor({
 
   function applyPreset(role: string) {
     setSelectedRole(role);
-    const preset = ROLE_PRESETS[role as keyof typeof ROLE_PRESETS] ?? ROLE_PRESETS.viewer;
-    setPerms(preset);
+    setPerms(ROLE_PRESETS[role as keyof typeof ROLE_PRESETS] ?? ROLE_PRESETS.viewer);
   }
 
   function isCustom() {
@@ -131,7 +137,6 @@ function PermissionEditor({
     setSaving(true);
     setError(null);
 
-    // If role changed, update role first
     if (selectedRole !== member.role) {
       const res = await fetch(`/api/workspace/members/${member.user_id}/permissions`, {
         method: "PUT",
@@ -140,13 +145,12 @@ function PermissionEditor({
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setError(d.error ?? "Erro ao alterar role.");
+        setError(d.error ?? "Erro ao alterar nível.");
         setSaving(false);
         return;
       }
     }
 
-    // Save custom permissions (or null to reset to preset)
     const customPerms = isCustom() ? perms : null;
     const res2 = await fetch(`/api/workspace/members/${member.user_id}/permissions`, {
       method: "PATCH",
@@ -155,7 +159,7 @@ function PermissionEditor({
     });
     if (!res2.ok) {
       const d = await res2.json().catch(() => ({}));
-      setError(d.error ?? "Erro ao salvar permissões.");
+      setError(d.error ?? "Erro ao salvar.");
       setSaving(false);
       return;
     }
@@ -165,125 +169,279 @@ function PermissionEditor({
     onClose();
   }
 
-  const labelStyle: React.CSSProperties = {
-    display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
-    padding: "7px 0", userSelect: "none",
-  };
+  const custom = isCustom();
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 50,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: "rgba(0,0,0,0.7)", padding: 20,
-    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 50,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)",
+        padding: 20,
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div style={{
-        background: "#0f0f1a", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 16, padding: "28px 28px 24px",
-        width: "100%", maxWidth: 460,
-        maxHeight: "90vh", overflowY: "auto",
-        boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+        background: "#0d0d1a",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderRadius: 18,
+        width: "100%", maxWidth: 440,
+        maxHeight: "88vh", overflowY: "auto",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
       }}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+
+        {/* Modal header */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "20px 24px 16px",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Avatar name={member.name || member.email} avatarUrl={member.avatar_url} />
             <div>
-              <div style={{ fontWeight: 600, fontSize: 14, color: "rgba(255,255,255,0.9)" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.92)" }}>
                 {member.name || member.email.split("@")[0]}
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{member.email}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
+                {member.email}
+              </div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 20, cursor: "pointer", lineHeight: 1, padding: "2px 6px" }}>×</button>
+          <button
+            onClick={onClose}
+            style={{
+              width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 8, color: "rgba(255,255,255,0.4)", fontSize: 16, cursor: "pointer",
+              lineHeight: 1, flexShrink: 0,
+            }}
+            aria-label="Fechar"
+          >×</button>
         </div>
 
-        {/* Role selector */}
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
-            Nível de acesso
-          </p>
-          <div style={{ display: "flex", gap: 6 }}>
-            {(canSetAdmin ? ["viewer", "member", "admin"] : ["viewer", "member"]).map(r => (
-              <button
-                key={r}
-                onClick={() => applyPreset(r)}
-                style={{
-                  padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  border: "1px solid",
-                  background: selectedRole === r ? ROLE_COLORS[r]?.bg : "transparent",
-                  color: selectedRole === r ? ROLE_COLORS[r]?.text : "rgba(255,255,255,0.35)",
-                  borderColor: selectedRole === r ? (ROLE_COLORS[r]?.text + "40") : "rgba(255,255,255,0.08)",
-                  transition: "all 0.12s",
-                }}
-              >
-                {ROLE_LABELS[r]}
-              </button>
+        <div style={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Role selector */}
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>
+              Nível de acesso
+            </p>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(canSetAdmin ? ["viewer", "member", "admin"] : ["viewer", "member"]).map(r => {
+                const isSelected = selectedRole === r;
+                const c = ROLE_COLORS[r];
+                return (
+                  <button
+                    key={r}
+                    onClick={() => applyPreset(r)}
+                    style={{
+                      flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12, fontWeight: 600,
+                      cursor: "pointer", transition: "all 0.12s",
+                      background: isSelected ? c.bg : "rgba(255,255,255,0.03)",
+                      color: isSelected ? c.text : "rgba(255,255,255,0.3)",
+                      border: `1px solid ${isSelected ? c.border : "rgba(255,255,255,0.06)"}`,
+                    }}
+                  >
+                    {ROLE_LABELS[r]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Permission groups */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {PERM_GROUPS.map(group => (
+              <div key={group.label}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", marginBottom: 8 }}>
+                  {group.label}
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {group.perms.map(({ key, label }) => {
+                    const on = perms[key];
+                    return (
+                      <label
+                        key={key}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          padding: "7px 10px", borderRadius: 8, cursor: "pointer",
+                          background: on ? "rgba(158,168,255,0.05)" : "transparent",
+                          transition: "background 0.1s",
+                        }}
+                      >
+                        {/* custom toggle */}
+                        <span
+                          onClick={() => toggle(key)}
+                          role="checkbox"
+                          aria-checked={on}
+                          tabIndex={0}
+                          onKeyDown={e => { if (e.key === " " || e.key === "Enter") toggle(key); }}
+                          style={{
+                            width: 16, height: 16, borderRadius: 5, flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            background: on ? "#818cf8" : "rgba(255,255,255,0.06)",
+                            border: `1px solid ${on ? "#818cf8" : "rgba(255,255,255,0.12)"}`,
+                            transition: "all 0.12s",
+                          }}
+                        >
+                          {on && (
+                            <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                              <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </span>
+                        <input type="checkbox" checked={on} onChange={() => toggle(key)} style={{ display: "none" }} />
+                        <span style={{ fontSize: 13, color: on ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0.3)", transition: "color 0.1s" }}>
+                          {label}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>
-            Mudar o nível aplica as permissões padrão. Ajuste cada item abaixo se precisar.
-          </p>
-        </div>
 
-        {/* Permission checkboxes */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 20 }}>
-          {PERM_GROUPS.map(group => (
-            <div key={group.label}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
-                {group.label}
-              </p>
-              {group.perms.map(({ key, label }) => (
-                <label key={key} style={labelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={perms[key]}
-                    onChange={() => toggle(key)}
-                    style={{ width: 15, height: 15, accentColor: "#9ea8ff", cursor: "pointer", flexShrink: 0 }}
-                  />
-                  <span style={{ fontSize: 13, color: perms[key] ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.35)" }}>
-                    {label}
-                  </span>
-                </label>
-              ))}
+          {/* Custom warning */}
+          {custom && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "9px 12px", borderRadius: 9,
+              background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.18)",
+            }}>
+              <span style={{ fontSize: 13 }}>⚡</span>
+              <span style={{ fontSize: 12, color: "#fbbf24" }}>Diferente do padrão desse nível</span>
             </div>
-          ))}
-        </div>
+          )}
 
-        {isCustom() && (
-          <div style={{ marginBottom: 12, padding: "6px 10px", borderRadius: 7, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)", fontSize: 11, color: "#fbbf24" }}>
-            ⚡ Customizado (diferente do padrão desse nível)
+          {error && (
+            <div style={{ padding: "9px 12px", borderRadius: 9, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", fontSize: 12, color: "#fca5a5" }}>
+              {error}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button onClick={onClose} style={{
+              padding: "9px 16px", borderRadius: 9,
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+              color: "rgba(255,255,255,0.45)", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+            }}>
+              Cancelar
+            </button>
+            <button onClick={save} disabled={saving} style={{
+              padding: "9px 20px", borderRadius: 9,
+              background: "linear-gradient(135deg,#9ea8ff,#7c87ff)",
+              border: "none", color: "#fff",
+              fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer",
+              fontFamily: "inherit", opacity: saving ? 0.6 : 1, transition: "opacity 0.15s",
+            }}>
+              {saving ? "Salvando…" : "Salvar"}
+            </button>
           </div>
-        )}
-
-        {error && (
-          <p style={{ fontSize: 12, color: "#f87171", marginBottom: 10 }}>⚠ {error}</p>
-        )}
-
-        {/* Actions */}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{
-            padding: "9px 18px", borderRadius: 9, background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)",
-            fontSize: 13, cursor: "pointer", fontFamily: "inherit",
-          }}>
-            Cancelar
-          </button>
-          <button onClick={save} disabled={saving} style={{
-            padding: "9px 20px", borderRadius: 9,
-            background: "linear-gradient(135deg,#9ea8ff,#7c87ff)",
-            border: "none", color: "#fff",
-            fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer",
-            fontFamily: "inherit", opacity: saving ? 0.6 : 1,
-          }}>
-            {saving ? "Salvando…" : "Salvar permissões"}
-          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Member row ───────────────────────────────────────────────────────────────
+function MemberRowItem({
+  avatar, name, email, role, badge, isSelf, canEdit, hasCustom,
+  onEditPerms, onRemove,
+}: {
+  avatar: string | null; name: string; email: string; role: string;
+  badge?: React.ReactNode; isSelf?: boolean; canEdit?: boolean; hasCustom?: boolean;
+  onEditPerms?: () => void; onRemove?: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "12px 16px",
+        background: hovered ? "rgba(255,255,255,0.02)" : "transparent",
+        transition: "background 0.1s",
+      }}
+    >
+      <Avatar name={name || email} avatarUrl={avatar} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.88)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {name || email.split("@")[0]}
+          {isSelf && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.25)" }}>você</span>}
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{email}</div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        {badge ?? <RoleBadge role={role} />}
+
+        {onEditPerms && canEdit && (
+          <button
+            onClick={onEditPerms}
+            style={{
+              padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
+              transition: "all 0.12s",
+              background: hasCustom ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${hasCustom ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.07)"}`,
+              color: hasCustom ? "#fbbf24" : "rgba(255,255,255,0.4)",
+            }}
+          >
+            {hasCustom ? "⚡ Custom" : "Permissões"}
+          </button>
+        )}
+        {!onEditPerms && hasCustom && (
+          <span style={{ fontSize: 11, color: "rgba(251,191,36,0.6)", fontWeight: 500 }}>⚡</span>
+        )}
+
+        {onRemove && canEdit && (
+          <button
+            onClick={onRemove}
+            title="Remover"
+            style={{
+              width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "none", border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 7, cursor: "pointer", color: "rgba(255,255,255,0.2)",
+              fontSize: 15, transition: "all 0.12s", flexShrink: 0,
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "rgba(248,113,113,0.12)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(248,113,113,0.3)";
+              (e.currentTarget as HTMLButtonElement).style.color = "#f87171";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "none";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.06)";
+              (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.2)";
+            }}
+          >×</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Section card wrapper ─────────────────────────────────────────────────────
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 14, overflow: "hidden",
+      background: "rgba(255,255,255,0.015)",
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Divider() {
+  return <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "0 16px" }} />;
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export function TeamSettings({
   members,
   invitations: initialInvitations,
@@ -311,12 +469,8 @@ export function TeamSettings({
 
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
-    setInviteError(null);
-    setInviteSuccess(false);
-    setSentToken(null);
-    setEmailSent(null);
-    setEmailErrMsg(null);
-    setTokenCopied(false);
+    setInviteError(null); setInviteSuccess(false);
+    setSentToken(null); setEmailSent(null); setEmailErrMsg(null); setTokenCopied(false);
     const emailBeingSent = inviteEmail;
     const tokenBeingSent = inviteToken.trim();
     startTransition(async () => {
@@ -331,18 +485,13 @@ export function TeamSettings({
       setSentToken(data.accessToken ?? null);
       setEmailSent(data.emailSent ?? false);
       setEmailErrMsg(data.emailError ?? null);
-      setInviteEmail("");
-      setInviteToken("");
+      setInviteEmail(""); setInviteToken("");
       setInvitations(prev => [...prev, {
-        id: crypto.randomUUID(),
-        workspace_id: ownerId,
-        email: emailBeingSent.toLowerCase(),
-        role: inviteRole,
-        token: "",
-        invited_by: ownerId,
+        id: crypto.randomUUID(), workspace_id: ownerId,
+        email: emailBeingSent.toLowerCase(), role: inviteRole,
+        token: "", invited_by: ownerId,
         expires_at: "2099-12-31T23:59:59Z",
-        accepted_at: null,
-        created_at: new Date().toISOString(),
+        accepted_at: null, created_at: new Date().toISOString(),
       }]);
     });
   }
@@ -368,18 +517,10 @@ export function TeamSettings({
     setMemberList(prev => prev.map(m => m.user_id === userId ? { ...m, ...updated } : m));
   }
 
-  const cellStyle: React.CSSProperties = {
-    padding: "12px 16px",
-    borderBottom: "1px solid rgba(255,255,255,0.05)",
-    fontSize: 13,
-    color: "rgba(255,255,255,0.75)",
-    verticalAlign: "middle",
-  };
-
   const pendingInvites = invitations.filter(inv => !inv.accepted_at);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
       {/* Permission editor modal */}
       {editingMember && (
@@ -393,228 +534,318 @@ export function TeamSettings({
 
       {/* Read-only notice */}
       {!canManage && (
-        <div style={{ padding: "10px 16px", borderRadius: 10, background: "rgba(158,168,255,0.06)", border: "1px solid rgba(158,168,255,0.15)", fontSize: 12, color: "rgba(158,168,255,0.7)" }}>
-          Você entrou com acesso de <strong style={{ color: "#9ea8ff" }}>{ROLE_LABELS[currentUserRole]}</strong>. Só admins e o dono do workspace gerenciam a equipe.
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "12px 16px", borderRadius: 12,
+          background: "rgba(158,168,255,0.05)", border: "1px solid rgba(158,168,255,0.12)",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="8" cy="8" r="7" stroke="#9ea8ff" strokeWidth="1.4" opacity="0.7"/>
+            <path d="M8 7v4M8 5.5v.5" stroke="#9ea8ff" strokeWidth="1.4" strokeLinecap="round" opacity="0.7"/>
+          </svg>
+          <span style={{ fontSize: 12, color: "rgba(158,168,255,0.7)" }}>
+            Você tem acesso de <strong style={{ color: "#9ea8ff", fontWeight: 600 }}>{ROLE_LABELS[currentUserRole]}</strong>. Só admins e o dono gerenciam a equipe.
+          </span>
         </div>
       )}
 
       {/* Invite form */}
       {canManage && (
-        <section>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>Adicionar alguém</h2>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>
-            A pessoa recebe o código no e-mail e entra pelo <strong style={{ color: "rgba(255,255,255,0.5)" }}>/acesso</strong>.
-          </p>
-
-          <form onSubmit={sendInvite} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <input
-                type="email"
-                placeholder="email@empresa.com"
-                value={inviteEmail}
-                onChange={e => { setInviteEmail(e.target.value); setInviteError(null); setInviteSuccess(false); }}
-                required
-                style={{ flex: "1 1 220px", padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
-              />
-              <select
-                value={inviteRole}
-                onChange={e => setInviteRole(e.target.value as "admin" | "member" | "viewer")}
-                style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.75)", fontSize: 13, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
-              >
-                <option value="viewer">Visualizador</option>
-                <option value="member">Membro</option>
-                {isCurrentUserOwner && <option value="admin">Admin</option>}
-              </select>
-            </div>
-
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="text" inputMode="numeric" pattern="[0-9]{6}" placeholder="000000"
-                value={inviteToken}
-                onChange={e => setInviteToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                maxLength={6}
-                style={{ width: 120, flexShrink: 0, padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(158,168,255,0.2)", color: "var(--accent-c)", fontSize: 20, outline: "none", fontFamily: "monospace", letterSpacing: "0.15em", textAlign: "center" }}
-              />
-              <button type="button" onClick={() => setInviteToken(String(Math.floor(100000 + Math.random() * 900000)))}
-                style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(158,168,255,0.08)", border: "1px solid rgba(158,168,255,0.15)", color: "var(--accent-c)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
-                Gerar
-              </button>
-              <button type="submit" disabled={isPending || !inviteEmail || inviteToken.length !== 6}
-                style={{ flex: 1, padding: "10px 20px", borderRadius: 10, background: "var(--accent-c)", color: "hsl(230 35% 7%)", fontSize: 13, fontWeight: 700, border: "none", cursor: isPending ? "not-allowed" : "pointer", opacity: isPending || inviteToken.length !== 6 ? 0.5 : 1, fontFamily: "inherit", transition: "opacity 0.15s", whiteSpace: "nowrap" }}>
-                {isPending ? "Enviando…" : "Enviar convite"}
-              </button>
-            </div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", margin: 0 }}>
-              Use &quot;Gerar&quot; pra criar um código aleatório. Permissões podem ser ajustadas depois.
+        <div>
+          <div style={{ marginBottom: 14 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.88)", marginBottom: 3 }}>Convidar pessoa</h2>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+              A pessoa entra pelo <span style={{ color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>/acesso</span> com o código que você gerar.
             </p>
-          </form>
+          </div>
 
-          {inviteError && <p style={{ marginTop: 8, fontSize: 12, color: "#f87171" }}>⚠ {inviteError}</p>}
+          <SectionCard>
+            <form onSubmit={sendInvite} style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
 
-          {inviteSuccess && sentToken && (
-            <div style={{ marginTop: 12, padding: "16px", borderRadius: 12, background: "rgba(158,168,255,0.06)", border: "1px solid rgba(158,168,255,0.2)", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 12, color: "var(--accent-c)", fontWeight: 600 }}>✓ Convite criado</span>
-                {emailSent === true && <span style={{ fontSize: 11, color: "rgba(158,168,255,0.6)" }}>· enviado por email</span>}
-                {emailSent === false && <span style={{ fontSize: 11, color: "#fbbf24" }}>· email não enviado</span>}
+              {/* Email + role */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  id="invite-email"
+                  type="email"
+                  placeholder="email@empresa.com"
+                  value={inviteEmail}
+                  onChange={e => { setInviteEmail(e.target.value); setInviteError(null); setInviteSuccess(false); }}
+                  required
+                  style={{
+                    flex: 1, minWidth: 0, padding: "9px 12px",
+                    borderRadius: 9, border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.85)",
+                    fontSize: 13, outline: "none", fontFamily: "inherit",
+                  }}
+                />
+                <select
+                  id="invite-role"
+                  value={inviteRole}
+                  onChange={e => setInviteRole(e.target.value as "admin" | "member" | "viewer")}
+                  style={{
+                    padding: "9px 10px", borderRadius: 9,
+                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.7)", fontSize: 13, outline: "none",
+                    fontFamily: "inherit", cursor: "pointer", flexShrink: 0,
+                  }}
+                >
+                  <option value="viewer">Visualizador</option>
+                  <option value="member">Membro</option>
+                  {isCurrentUserOwner && <option value="admin">Admin</option>}
+                </select>
               </div>
-              <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(0,0,0,0.3)", border: "1px solid rgba(158,168,255,0.15)" }}>
-                <p style={{ margin: "0 0 6px", fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Código de acesso</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <code style={{ flex: 1, fontSize: 18, fontWeight: 700, color: "var(--accent-c)", fontFamily: "monospace", letterSpacing: "0.05em" }}>{sentToken}</code>
-                  <button onClick={copyToken} style={{ padding: "5px 12px", borderRadius: 8, background: tokenCopied ? "rgba(52,211,153,0.15)" : "rgba(158,168,255,0.12)", border: `1px solid ${tokenCopied ? "rgba(52,211,153,0.3)" : "rgba(158,168,255,0.2)"}`, color: tokenCopied ? "#34d399" : "var(--accent-c)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
-                    {tokenCopied ? "Copiado ✓" : "Copiar"}
+
+              {/* Token row */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <input
+                    id="invite-token"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    placeholder="——————"
+                    value={inviteToken}
+                    onChange={e => setInviteToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    maxLength={6}
+                    style={{
+                      width: 112, padding: "9px 12px",
+                      borderRadius: 9, border: "1px solid rgba(158,168,255,0.2)",
+                      background: "rgba(158,168,255,0.05)", color: "#9ea8ff",
+                      fontSize: 18, fontFamily: "monospace", letterSpacing: "0.2em",
+                      textAlign: "center", outline: "none",
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInviteToken(String(Math.floor(100000 + Math.random() * 900000)))}
+                  style={{
+                    padding: "9px 14px", borderRadius: 9, flexShrink: 0,
+                    background: "rgba(158,168,255,0.07)", border: "1px solid rgba(158,168,255,0.15)",
+                    color: "#9ea8ff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  Gerar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending || !inviteEmail || inviteToken.length !== 6}
+                  style={{
+                    flex: 1, padding: "9px 16px", borderRadius: 9,
+                    background: "linear-gradient(135deg,#9ea8ff,#7c87ff)",
+                    color: "hsl(230 35% 7%)", fontSize: 13, fontWeight: 700,
+                    border: "none", cursor: (isPending || inviteToken.length !== 6) ? "not-allowed" : "pointer",
+                    opacity: (isPending || inviteToken.length !== 6) ? 0.45 : 1,
+                    fontFamily: "inherit", transition: "opacity 0.15s", whiteSpace: "nowrap",
+                  }}
+                >
+                  {isPending ? "Enviando…" : "Enviar convite"}
+                </button>
+              </div>
+            </form>
+
+            {/* Error */}
+            {inviteError && (
+              <div style={{ padding: "10px 16px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <p style={{ fontSize: 12, color: "#fca5a5" }}>⚠ {inviteError}</p>
+              </div>
+            )}
+
+            {/* Success block */}
+            {inviteSuccess && sentToken && (
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#34d399", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(52,211,153,0.9)" }}>Convite criado</span>
+                  {emailSent === true && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>· email enviado</span>}
+                  {emailSent === false && <span style={{ fontSize: 11, color: "#fbbf24" }}>· email não enviado</span>}
+                </div>
+
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "12px 14px", borderRadius: 10,
+                  background: "rgba(0,0,0,0.25)", border: "1px solid rgba(158,168,255,0.15)",
+                }}>
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Código</p>
+                    <code style={{ fontSize: 22, fontWeight: 800, color: "#9ea8ff", fontFamily: "monospace", letterSpacing: "0.12em" }}>{sentToken}</code>
+                  </div>
+                  <button
+                    onClick={copyToken}
+                    style={{
+                      padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                      cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                      background: tokenCopied ? "rgba(52,211,153,0.12)" : "rgba(158,168,255,0.1)",
+                      border: `1px solid ${tokenCopied ? "rgba(52,211,153,0.3)" : "rgba(158,168,255,0.2)"}`,
+                      color: tokenCopied ? "#34d399" : "#9ea8ff",
+                    }}
+                  >
+                    {tokenCopied ? "✓ Copiado" : "Copiar"}
                   </button>
                 </div>
+
+                {emailSent === false && emailErrMsg && (
+                  <p style={{ fontSize: 11, color: "rgba(251,191,36,0.65)", lineHeight: 1.5 }}>
+                    {emailErrMsg.includes("RESEND_API_KEY")
+                      ? "Configure RESEND_API_KEY para envio automático de emails."
+                      : `Erro no email: ${emailErrMsg}`}
+                  </p>
+                )}
               </div>
-              {emailSent === false && emailErrMsg && (
-                <p style={{ fontSize: 11, color: "rgba(251,191,36,0.7)", margin: 0 }}>
-                  ⚠ {emailErrMsg.includes("RESEND_API_KEY") ? "Configure RESEND_API_KEY para envio automático." : `Erro: ${emailErrMsg}`}
-                </p>
-              )}
-            </div>
-          )}
-        </section>
+            )}
+          </SectionCard>
+        </div>
       )}
 
-      {/* Members table */}
-      <section>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: 12 }}>
-          Membros · {memberList.length + 1}
-        </h2>
+      {/* Members */}
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 14 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>Membros</h2>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>{memberList.length + 1}</span>
+        </div>
 
-        <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <tbody>
-              {/* Owner row */}
-              <tr>
-                <td style={cellStyle}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <Avatar name={ownerProfile.name || ownerProfile.email} avatarUrl={ownerProfile.avatar_url} />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.9)" }}>
-                        {ownerProfile.name || ownerProfile.email.split("@")[0]}
-                        {isCurrentUserOwner && <span style={{ marginLeft: 6, fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>(você)</span>}
-                      </div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{ownerProfile.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ ...cellStyle, width: 110 }}><RoleBadge role="owner" /></td>
-                <td style={{ ...cellStyle, width: 120, textAlign: "right" }}>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)" }}>Acesso total</span>
-                </td>
-                <td style={{ ...cellStyle, width: 50 }} />
-              </tr>
+        <SectionCard>
+          {/* Owner */}
+          <MemberRowItem
+            avatar={ownerProfile.avatar_url}
+            name={ownerProfile.name || ownerProfile.email.split("@")[0]}
+            email={ownerProfile.email}
+            role="owner"
+            isSelf={isCurrentUserOwner}
+            badge={
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <RoleBadge role="owner" />
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", fontWeight: 500 }}>acesso total</span>
+              </div>
+            }
+          />
 
-              {/* Other members */}
-              {memberList.map(m => {
-                const isSelf = m.user_id === currentUserId;
-                const hasCustomPerms = m.permissions !== null;
-                const canEdit = canManage && !isSelf && !(currentUserRole === "admin" && m.role === "admin");
-                return (
-                  <tr key={m.user_id}>
-                    <td style={cellStyle}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <Avatar name={m.name || m.email} avatarUrl={m.avatar_url} />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13, color: "rgba(255,255,255,0.9)" }}>
-                            {m.name || m.email.split("@")[0]}
-                            {isSelf && <span style={{ marginLeft: 6, fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>(você)</span>}
-                          </div>
-                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{m.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ ...cellStyle, width: 110 }}>
-                      <RoleBadge role={m.role} />
-                    </td>
-                    <td style={{ ...cellStyle, width: 120, textAlign: "right" }}>
-                      {canEdit ? (
-                        <button
-                          onClick={() => setEditingMember(m)}
-                          style={{ padding: "5px 12px", borderRadius: 8, background: hasCustomPerms ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.05)", border: `1px solid ${hasCustomPerms ? "rgba(251,191,36,0.25)" : "rgba(255,255,255,0.08)"}`, color: hasCustomPerms ? "#fbbf24" : "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
-                        >
-                          {hasCustomPerms ? "⚡ Custom" : "Permissões"}
-                        </button>
-                      ) : hasCustomPerms ? (
-                        <span style={{ fontSize: 11, color: "#fbbf24" }}>⚡ Custom</span>
-                      ) : null}
-                    </td>
-                    <td style={{ ...cellStyle, width: 50, textAlign: "right" }}>
-                      {canEdit && (
-                        <button onClick={() => removeMember(m.user_id)} title="Remover membro"
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.2)", padding: "4px 6px", borderRadius: 6, fontSize: 16, lineHeight: 1, transition: "color 0.15s" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.2)"; }}>
-                          ×
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          {memberList.length > 0 && <Divider />}
+
+          {memberList.map((m, i) => {
+            const isSelf = m.user_id === currentUserId;
+            const canEdit = canManage && !isSelf && !(currentUserRole === "admin" && m.role === "admin");
+            return (
+              <div key={m.user_id}>
+                {i > 0 && <Divider />}
+                <MemberRowItem
+                  avatar={m.avatar_url}
+                  name={m.name || m.email.split("@")[0]}
+                  email={m.email}
+                  role={m.role}
+                  isSelf={isSelf}
+                  canEdit={canEdit}
+                  hasCustom={m.permissions !== null}
+                  onEditPerms={canEdit ? () => setEditingMember(m) : undefined}
+                  onRemove={canEdit ? () => removeMember(m.user_id) : undefined}
+                />
+              </div>
+            );
+          })}
 
           {memberList.length === 0 && (
-            <div style={{ padding: "20px 16px", textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: 13 }}>
-              {canManage ? "Nenhum membro ainda. Envie um convite acima." : "Nenhum outro membro neste workspace."}
+            <div style={{ padding: "24px 16px", textAlign: "center" }}>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.2)" }}>
+                {canManage ? "Nenhum membro ainda. Envie um convite." : "Nenhum outro membro neste workspace."}
+              </p>
             </div>
           )}
-        </div>
-      </section>
+        </SectionCard>
+      </div>
 
       {/* Pending invitations */}
       {canManage && pendingInvites.length > 0 && (
-        <section>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: 12 }}>
-            Convites pendentes · {pendingInvites.length}
-          </h2>
-          <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <tbody>
-                {pendingInvites.map(inv => (
-                  <tr key={inv.id}>
-                    <td style={cellStyle}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px dashed rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "rgba(255,255,255,0.3)" }}>?</div>
-                        <div>
-                          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>{inv.email}</div>
-                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 1 }}>
-                            {inv.expires_at.startsWith("2099") ? "Token permanente" : `Expira em ${new Date(inv.expires_at).toLocaleDateString("pt-BR")}`}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ ...cellStyle, width: 110 }}><RoleBadge role={inv.role} /></td>
-                    <td style={{ ...cellStyle, width: 120 }} />
-                    <td style={{ ...cellStyle, width: 50, textAlign: "right" }}>
-                      <button onClick={() => revokeInvitation(inv.id)} title="Cancelar convite"
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.2)", padding: "4px 6px", borderRadius: 6, fontSize: 16, lineHeight: 1, transition: "color 0.15s" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.2)"; }}>
-                        ×
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 14 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>Pendentes</h2>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>{pendingInvites.length}</span>
           </div>
-        </section>
+
+          <SectionCard>
+            {pendingInvites.map((inv, i) => (
+              <div key={inv.id}>
+                {i > 0 && <Divider />}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px" }}>
+                  {/* placeholder avatar */}
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1.5px dashed rgba(255,255,255,0.12)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, color: "rgba(255,255,255,0.2)",
+                  }}>?</div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {inv.email}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>
+                      {inv.expires_at.startsWith("2099") ? "Token permanente" : `Expira em ${new Date(inv.expires_at).toLocaleDateString("pt-BR")}`}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <RoleBadge role={inv.role} />
+                    <button
+                      onClick={() => revokeInvitation(inv.id)}
+                      title="Cancelar convite"
+                      style={{
+                        width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
+                        background: "none", border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 7, cursor: "pointer", color: "rgba(255,255,255,0.2)",
+                        fontSize: 15, transition: "all 0.12s",
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLButtonElement).style.background = "rgba(248,113,113,0.12)";
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(248,113,113,0.3)";
+                        (e.currentTarget as HTMLButtonElement).style.color = "#f87171";
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLButtonElement).style.background = "none";
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.06)";
+                        (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.2)";
+                      }}
+                    >×</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </SectionCard>
+        </div>
       )}
 
       {/* Role legend */}
-      <section style={{ paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", lineHeight: 1.8 }}>
-          <strong style={{ color: "#fbbf24" }}>Owner</strong>: tudo, sempre, imutável.{" "}
-          <strong style={{ color: "#c084fc" }}>Admin</strong>: tudo + gerencia a equipe.{" "}
-          <strong style={{ color: "#818cf8" }}>Membro</strong>: cria, edita e publica.{" "}
-          <strong style={{ color: "#94a3b8" }}>Visualizador</strong>: só lê.{" "}
-          <strong style={{ color: "#fbbf24" }}>⚡ Custom</strong>: permissões ajustadas manualmente.
-        </p>
-      </section>
+      <div style={{
+        display: "flex", flexWrap: "wrap", gap: 6,
+        paddingTop: 4, borderTop: "1px solid rgba(255,255,255,0.04)",
+      }}>
+        {[
+          { role: "owner",  desc: "tudo, sempre" },
+          { role: "admin",  desc: "tudo + equipe" },
+          { role: "member", desc: "cria, edita, publica" },
+          { role: "viewer", desc: "só lê" },
+        ].map(({ role, desc }) => {
+          const c = ROLE_COLORS[role];
+          return (
+            <div key={role} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "5px 10px", borderRadius: 20,
+              background: c.bg, border: `1px solid ${c.border}`,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: c.text }}>{ROLE_LABELS[role]}</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{desc}</span>
+            </div>
+          );
+        })}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "5px 10px", borderRadius: 20,
+          background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.18)",
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>⚡ Custom</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>permissões manuais</span>
+        </div>
+      </div>
     </div>
   );
 }
