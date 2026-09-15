@@ -11,8 +11,8 @@ const NAV_MAIN = [
 ];
 
 const NAV_SETTINGS = [
-  { href: "/dashboard/settings/team", label: "Equipe",        Icon: UsersThree },
-  { href: "/dashboard/settings",      label: "Configurações", Icon: GearSix    },
+  { href: "/dashboard/settings/team", label: "Equipe",        Icon: UsersThree, exact: true },
+  { href: "/dashboard/settings",      label: "Configurações", Icon: GearSix,    exact: true },
 ];
 
 function NavItem({ href, label, Icon, exact = false }: {
