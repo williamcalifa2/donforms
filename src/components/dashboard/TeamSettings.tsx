@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import type { WorkspaceInvitation, WorkspacePermissions } from "@/types/database.types";
-import type { WorkspaceRole } from "@/lib/workspace/getWorkspaceOwner";
-import { ROLE_PRESETS, OWNER_PERMISSIONS } from "@/lib/workspace/getWorkspaceOwner";
+import type { WorkspaceRole } from "@/lib/workspace/permissions";
+import { ROLE_PRESETS } from "@/lib/workspace/permissions";
 
 interface MemberRow {
   workspace_id: string;

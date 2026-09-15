@@ -12,8 +12,16 @@
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { WorkspacePermissions } from "@/types/database.types";
+import {
+  type WorkspaceRole,
+  ROLE_PRESETS,
+  OWNER_PERMISSIONS,
+  resolvePermissions,
+} from "@/lib/workspace/permissions";
 
-export type WorkspaceRole = "owner" | "admin" | "member" | "viewer";
+// Re-export for callers that import from this module
+export type { WorkspaceRole };
+export { ROLE_PRESETS, OWNER_PERMISSIONS, resolvePermissions };
 
 export interface WorkspaceContext {
   /** user_id of the workspace owner — use this to query forms/submissions */
@@ -24,72 +32,6 @@ export interface WorkspaceContext {
   role: WorkspaceRole;
   /** effective resolved permissions (role preset merged with custom overrides) */
   permissions: WorkspacePermissions;
-}
-
-// ─── Role presets ─────────────────────────────────────────────────────────────
-
-export const ROLE_PRESETS: Record<Exclude<WorkspaceRole, "owner">, WorkspacePermissions> = {
-  admin: {
-    forms_view: true,
-    forms_create: true,
-    forms_edit: true,
-    forms_publish: true,
-    forms_delete: true,
-    responses_view: true,
-    responses_export: true,
-    analytics_view: true,
-    team_manage: true,
-  },
-  member: {
-    forms_view: true,
-    forms_create: true,
-    forms_edit: true,
-    forms_publish: true,
-    forms_delete: false,
-    responses_view: true,
-    responses_export: false,
-    analytics_view: true,
-    team_manage: false,
-  },
-  viewer: {
-    forms_view: true,
-    forms_create: false,
-    forms_edit: false,
-    forms_publish: false,
-    forms_delete: false,
-    responses_view: true,
-    responses_export: false,
-    analytics_view: true,
-    team_manage: false,
-  },
-};
-
-const OWNER_PERMISSIONS: WorkspacePermissions = {
-  forms_view: true,
-  forms_create: true,
-  forms_edit: true,
-  forms_publish: true,
-  forms_delete: true,
-  responses_view: true,
-  responses_export: true,
-  analytics_view: true,
-  team_manage: true,
-};
-
-/**
- * Merge role preset with custom overrides from the DB.
- * Custom permissions in the DB completely replace individual bits (not merged):
- * if permissions != null, those exact bits are used.
- */
-function resolvePermissions(
-  role: WorkspaceRole,
-  custom: WorkspacePermissions | null
-): WorkspacePermissions {
-  if (role === "owner") return OWNER_PERMISSIONS;
-  const preset = ROLE_PRESETS[role] ?? ROLE_PRESETS.viewer;
-  if (!custom) return preset;
-  // Custom is a full override (every bit must be present in the DB)
-  return { ...preset, ...custom };
 }
 
 // ─── Context resolution ───────────────────────────────────────────────────────
@@ -238,6 +180,3 @@ export async function setMemberRole(
 
   return { error: error?.message ?? null };
 }
-
-// Export presets and owner perms for UI use
-export { OWNER_PERMISSIONS, resolvePermissions };
