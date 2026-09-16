@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { extractUtms } from "@/lib/utils";
+import { interpolateVariables } from "@/lib/piping";
 import { QuestionSlide } from "./QuestionSlide";
 import type { FormField, FormSettings } from "@/types/database.types";
 
@@ -755,6 +756,8 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                 accentRgb={[r, g, b]}
                 textColor={textColor}
                 formId={formId}
+                answers={answers}
+                allFields={fields}
               />
             )}
 
@@ -818,7 +821,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                 </motion.div>
 
                 <h2 style={{ fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 700, lineHeight: 1.2, marginBottom: 8 }}>
-                  {thankYouMessage}
+                  {interpolateVariables(thankYouMessage, fields, answers)}
                 </h2>
                 {redirectUrl && <p style={{ fontSize: 14, opacity: 0.4, marginTop: 8 }}>Redirecionando em instantes…</p>}
                 {preview && <p style={{ fontSize: 12, opacity: 0.25, marginTop: 8 }}>(Modo preview — resposta não salva)</p>}
@@ -846,7 +849,11 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
                   Obrigado pelo interesse!
                 </h2>
                 <p style={{ fontSize: 18, opacity: 0.5, lineHeight: 1.5 }}>
-                  {disqualifyData?.message ?? "Agradecemos o seu contato. Entraremos em contato se tivermos uma oportunidade adequada."}
+                  {interpolateVariables(
+                    disqualifyData?.message ?? "Agradecemos o seu contato. Entraremos em contato se tivermos uma oportunidade adequada.",
+                    fields,
+                    answers
+                  )}
                 </p>
                 {disqualifyData?.url && (
                   <p style={{ fontSize: 12, opacity: 0.25, marginTop: 16 }}>Redirecionando em instantes…</p>

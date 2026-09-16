@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { getAvailablePipingVariables } from "@/lib/piping";
 import type { FormField, FieldCondition } from "@/types/database.types";
 
 const TYPE_LABELS: Record<FormField["type"], string> = {
@@ -44,6 +45,7 @@ interface Props {
 export function FieldConfig({ field, index, allFields, onChange }: Props) {
   const otherFields = allFields.filter(f => f.id !== field.id && f.type !== "statement");
   const conditions: FieldCondition[] = field.conditions ?? [];
+  const availableVars = getAvailablePipingVariables(allFields, index);
   return (
     <div className="max-w-xl mx-auto space-y-6 animate-fade-up">
       {/* Header */}
@@ -56,13 +58,36 @@ export function FieldConfig({ field, index, allFields, onChange }: Props) {
 
       {/* Config */}
       <div className="border rounded-xl p-5 space-y-4 bg-card">
-        <Input
-          label={field.type === "statement" ? "Título" : "Pergunta *"}
-          value={field.label}
-          onChange={(e) => onChange({ label: e.target.value })}
-          placeholder={field.type === "statement" ? "Ex: Antes de continuar…" : "Ex: Qual é o seu nome?"}
-          maxLength={200}
-        />
+        <div className="space-y-1.5">
+          <Input
+            label={field.type === "statement" ? "Título" : "Pergunta *"}
+            value={field.label}
+            onChange={(e) => onChange({ label: e.target.value })}
+            placeholder={field.type === "statement" ? "Ex: Antes de continuar…" : "Ex: Qual é o seu nome?"}
+            maxLength={200}
+          />
+          {availableVars.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                ✦ Inserir resposta:
+              </span>
+              {availableVars.map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => {
+                    const separator = field.label.endsWith(" ") || field.label.length === 0 ? "" : " ";
+                    onChange({ label: `${field.label}${separator}${v.variableKey}` });
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  title={`Inserir ${v.variableKey} na pergunta`}
+                >
+                  {v.previewBadge}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Descrição / Subtítulo (obrigatório em statement, opcional nos demais) */}
         <div className="space-y-1">
@@ -79,6 +104,28 @@ export function FieldConfig({ field, index, allFields, onChange }: Props) {
             rows={2}
             className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none placeholder:text-muted-foreground"
           />
+          {availableVars.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                ✦ Inserir no subtítulo:
+              </span>
+              {availableVars.map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => {
+                    const cur = field.description ?? "";
+                    const separator = cur.endsWith(" ") || cur.length === 0 ? "" : " ";
+                    onChange({ description: `${cur}${separator}${v.variableKey}` });
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  title={`Inserir ${v.variableKey} no subtítulo`}
+                >
+                  {v.previewBadge}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Placeholder */}

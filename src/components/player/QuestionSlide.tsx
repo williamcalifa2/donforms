@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { interpolateVariables } from "@/lib/piping";
 import { ShortTextField } from "./fields/ShortTextField";
 import { LongTextField } from "./fields/LongTextField";
 import { EmailField } from "./fields/EmailField";
@@ -30,6 +31,8 @@ interface Props {
   accentRgb: [number, number, number];
   textColor: string;
   formId: string;
+  answers?: Record<string, unknown>;
+  allFields?: FormField[];
 }
 
 const variants = {
@@ -59,11 +62,24 @@ const NO_ENTER_TYPES = new Set(["file_upload", "long_text", "multiple_choice", "
 export function QuestionSlide({
   field, index, value, onChange, onNext, onPrev, isLast,
   primaryColor, ctaColor, ctaText, direction, error, accentRgb, textColor, formId,
+  answers = {}, allFields = [],
 }: Props) {
   const isStatement = field.type === "statement";
   const showOK = !AUTO_ADVANCE_TYPES.has(field.type) && !NO_OK_TYPES.has(field.type);
   const [r, g, b] = accentRgb;
   const btnColor = ctaColor || primaryColor;
+
+  // Interpolação de variáveis (Conversational Piping)
+  const labelText = interpolateVariables(field.label, allFields, answers);
+  const descriptionText = field.description
+    ? interpolateVariables(field.description, allFields, answers)
+    : undefined;
+  const placeholderText = field.placeholder
+    ? interpolateVariables(field.placeholder, allFields, answers)
+    : undefined;
+  const resolvedCtaText = ctaText
+    ? interpolateVariables(ctaText, allFields, answers)
+    : undefined;
 
   return (
     <motion.div
@@ -127,24 +143,24 @@ export function QuestionSlide({
           color: textColor,
         }}
       >
-        {field.label}
+        {labelText}
         {!isStatement && field.required && (
           <span style={{ color: primaryColor, marginLeft: 4, fontSize: "0.6em", verticalAlign: "super", opacity: 0.8 }}>*</span>
         )}
       </motion.h2>
 
       {/* Description */}
-      {field.description && (
+      {descriptionText && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.14, duration: 0.35 }}
           style={{ fontSize: 17, lineHeight: 1.55, marginBottom: 32, color: textColor, opacity: 0.45 }}
         >
-          {field.description}
+          {descriptionText}
         </motion.p>
       )}
-      {!field.description && <div style={{ marginBottom: 28 }} />}
+      {!descriptionText && <div style={{ marginBottom: 28 }} />}
 
       {/* Field input */}
       {!isStatement && (
@@ -155,19 +171,19 @@ export function QuestionSlide({
           style={{ marginBottom: error ? 10 : 28 }}
         >
           {field.type === "short_text" && (
-            <ShortTextField value={value} onChange={onChange} placeholder={field.placeholder} primaryColor={primaryColor} onEnter={onNext} />
+            <ShortTextField value={value} onChange={onChange} placeholder={placeholderText ?? field.placeholder} primaryColor={primaryColor} onEnter={onNext} />
           )}
           {field.type === "long_text" && (
-            <LongTextField value={value} onChange={onChange} placeholder={field.placeholder} onEnter={onNext} />
+            <LongTextField value={value} onChange={onChange} placeholder={placeholderText ?? field.placeholder} onEnter={onNext} />
           )}
           {field.type === "email" && (
-            <EmailField value={value} onChange={onChange} placeholder={field.placeholder} onEnter={onNext} />
+            <EmailField value={value} onChange={onChange} placeholder={placeholderText ?? field.placeholder} onEnter={onNext} />
           )}
           {field.type === "number" && (
-            <NumberField value={value} onChange={onChange} placeholder={field.placeholder} min={field.min} max={field.max} onEnter={onNext} />
+            <NumberField value={value} onChange={onChange} placeholder={placeholderText ?? field.placeholder} min={field.min} max={field.max} onEnter={onNext} />
           )}
           {field.type === "phone" && (
-            <PhoneField value={value} onChange={onChange} placeholder={field.placeholder} onEnter={onNext} primaryColor={primaryColor} />
+            <PhoneField value={value} onChange={onChange} placeholder={placeholderText ?? field.placeholder} onEnter={onNext} primaryColor={primaryColor} />
           )}
           {field.type === "date" && (
             <DateField value={value} onChange={onChange} onEnter={onNext} />
@@ -258,7 +274,7 @@ export function QuestionSlide({
               boxShadow: `0 4px 16px rgba(${r},${g},${b},0.35)`,
             }}
           >
-            {isLast ? `${ctaText ?? "Enviar"} ✓` : `${ctaText ?? "OK"} ↵`}
+            {isLast ? `${resolvedCtaText ?? "Enviar"} ✓` : `${resolvedCtaText ?? "OK"} ↵`}
           </button>
         )}
 
