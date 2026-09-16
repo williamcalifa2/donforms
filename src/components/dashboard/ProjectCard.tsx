@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
-import { renameProject, updateProjectLogo, deleteProject } from "@/app/actions/projects";
+import { renameProject, uploadProjectLogo, deleteProject } from "@/app/actions/projects";
 import {
   PencilSimple, DotsThreeVertical, Trash, Image,
 } from "@phosphor-icons/react";
@@ -20,10 +20,9 @@ export function ProjectCard({ project }: { project: Project }) {
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [nameValue, setNameValue] = useState(project.name);
-  const [logoUrl, setLogoUrl] = useState(project.logo_url ?? "");
-  const [logoEditing, setLogoEditing] = useState(false);
-  const [logoInput, setLogoInput] = useState(project.logo_url ?? "");
+  const [logoPreview, setLogoPreview] = useState<string | null>(project.logo_url);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,10 +44,18 @@ export function ProjectCard({ project }: { project: Project }) {
     startTransition(async () => { await renameProject(project.id, trimmed); });
   };
 
-  const handleLogoSave = () => {
-    setLogoEditing(false);
-    setLogoUrl(logoInput);
-    startTransition(async () => { await updateProjectLogo(project.id, logoInput); });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setLogoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    const fd = new FormData();
+    fd.append("logo", file);
+    startTransition(async () => {
+      const res = await uploadProjectLogo(project.id, fd);
+      if (res.url) setLogoPreview(res.url);
+    });
   };
 
   const handleDelete = () => {
@@ -79,19 +86,33 @@ export function ProjectCard({ project }: { project: Project }) {
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
+      {/* Hidden file input */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* Logo + Name row */}
       <div className="flex items-center gap-3 mb-3">
         {/* Avatar / logo */}
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-semibold shrink-0 cursor-pointer transition-opacity hover:opacity-70"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-semibold shrink-0 cursor-pointer transition-opacity hover:opacity-70 relative overflow-hidden"
           style={{ background: "var(--sidebar-active)", color: "var(--accent-c)" }}
-          onClick={() => { setMenuOpen(false); setLogoInput(logoUrl); setLogoEditing(true); }}
+          onClick={() => { setMenuOpen(false); fileRef.current?.click(); }}
           title="Alterar logo"
         >
-          {logoUrl
-            ? <img src={logoUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+          {logoPreview
+            ? <img src={logoPreview} alt="" className="w-full h-full object-cover" />
             : initials
           }
+          {isPending && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
+              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            </div>
+          )}
         </div>
 
         {/* Title */}
@@ -128,34 +149,6 @@ export function ProjectCard({ project }: { project: Project }) {
           </p>
         </div>
       </div>
-
-      {/* Logo URL edit */}
-      {logoEditing && (
-        <div className="flex gap-2 mt-2 mb-1">
-          <input
-            type="url"
-            value={logoInput}
-            onChange={e => setLogoInput(e.target.value)}
-            placeholder="URL da logo (https://...)"
-            className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] border bg-transparent focus:outline-none focus:ring-1 focus:ring-primary/50"
-            style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
-            onKeyDown={e => {
-              if (e.key === "Enter") handleLogoSave();
-              if (e.key === "Escape") setLogoEditing(false);
-            }}
-            autoFocus
-          />
-          <button onClick={handleLogoSave}
-            className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
-            style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}>
-            OK
-          </button>
-          <button onClick={() => setLogoEditing(false)}
-            className="px-2 py-1.5 rounded-lg text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Spacer */}
       <div className="flex-1 mt-3" />
@@ -217,7 +210,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 <PencilSimple size={13} weight="duotone" /> Renomear
               </button>
               <button
-                onClick={() => { setMenuOpen(false); setLogoInput(logoUrl); setLogoEditing(true); }}
+                onClick={() => { setMenuOpen(false); fileRef.current?.click(); }}
                 className="w-full text-left px-3 py-1.5 text-[12px] font-medium flex items-center gap-2.5 transition-colors"
                 style={{ color: "var(--text-secondary)" }}
                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "var(--text-primary)"; }}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Metadata } from "next";
-import { ProjectDetailClient, NewFormButton } from "./ProjectDetailClient";
+import { NewFormButton, ProjectSettingsButton } from "./ProjectDetailClient";
 import type { FormWithCount } from "@/types/database.types";
 
 export const metadata: Metadata = { title: "Projeto" };
@@ -75,7 +75,10 @@ export default async function ProjectDetailPage({ params }: Props) {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Formulários</h2>
-          <NewFormButton projectId={id} />
+          <div className="flex items-center gap-2">
+            <ProjectSettingsButton projectId={id} clients={clientList} appUrl={APP_URL} />
+            <NewFormButton projectId={id} />
+          </div>
         </div>
 
         {formList.length === 0 ? (
@@ -120,21 +123,6 @@ export default async function ProjectDetailPage({ params }: Props) {
         )}
       </div>
 
-      {/* Clients section */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold">Clientes com acesso</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Cada cliente recebe um link único para ver os dados do projeto</p>
-          </div>
-        </div>
-
-        <ProjectDetailClient
-          projectId={id}
-          clients={clientList}
-          appUrl={APP_URL}
-        />
-      </div>
     </div>
   );
 }

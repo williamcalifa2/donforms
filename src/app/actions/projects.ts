@@ -51,22 +51,33 @@ export async function renameProject(projectId: string, name: string) {
   return { error: null };
 }
 
-export async function updateProjectLogo(projectId: string, logoUrl: string) {
+export async function uploadProjectLogo(projectId: string, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Não autenticado" };
+  if (!user) return { error: "Não autenticado", url: null };
+
+  const file = formData.get("logo") as File | null;
+  if (!file || !file.size) return { error: "Arquivo não enviado", url: null };
+
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const path = `project-logos/${projectId}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("form-assets")
+    .upload(path, file, { upsert: true, contentType: file.type });
+
+  if (uploadError) return { error: uploadError.message, url: null };
+
+  const { data: urlData } = supabase.storage.from("form-assets").getPublicUrl(path);
+  const url = urlData?.publicUrl ? `${urlData.publicUrl}?t=${Date.now()}` : null;
+  if (!url) return { error: "Erro ao obter URL", url: null };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
-  const { error } = await admin
-    .from("projects")
-    .update({ logo_url: logoUrl || null })
-    .eq("id", projectId)
-    .eq("user_id", user.id);
+  await admin.from("projects").update({ logo_url: url }).eq("id", projectId).eq("user_id", user.id);
 
-  if (error) return { error: error.message };
   revalidatePath("/dashboard/projects");
-  return { error: null };
+  return { error: null, url };
 }
 
 export async function deleteProject(projectId: string) {
