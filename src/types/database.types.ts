@@ -183,9 +183,9 @@ export interface Database {
         Update: { id?: string; name?: string; email?: string; avatar_url?: string | null; updated_at?: string };
       };
       forms: {
-        Row: { id: string; user_id: string; title: string; slug: string; settings: FormSettings; fields: FormField[]; is_published: boolean; created_at: string; updated_at: string };
-        Insert: { id?: string; user_id: string; title?: string; slug: string; settings?: FormSettings; fields?: FormField[]; is_published?: boolean; created_at?: string; updated_at?: string };
-        Update: { title?: string; slug?: string; settings?: FormSettings; fields?: FormField[]; is_published?: boolean; updated_at?: string };
+        Row: { id: string; user_id: string; project_id: string | null; title: string; slug: string; settings: FormSettings; fields: FormField[]; is_published: boolean; created_at: string; updated_at: string };
+        Insert: { id?: string; user_id: string; project_id?: string | null; title?: string; slug: string; settings?: FormSettings; fields?: FormField[]; is_published?: boolean; created_at?: string; updated_at?: string };
+        Update: { project_id?: string | null; title?: string; slug?: string; settings?: FormSettings; fields?: FormField[]; is_published?: boolean; updated_at?: string };
       };
       submissions: {
         Row: { id: string; form_id: string; answers: Record<string, string | string[] | number>; metadata: SubmissionMetadata; created_at: string; status: string };
@@ -200,7 +200,7 @@ export interface Database {
     };
     Views: {
       forms_with_submission_count: {
-        Row: { id: string; user_id: string; title: string; slug: string; settings: FormSettings; fields: FormField[]; is_published: boolean; created_at: string; updated_at: string; submission_count: number };
+        Row: { id: string; user_id: string; project_id: string | null; title: string; slug: string; settings: FormSettings; fields: FormField[]; is_published: boolean; created_at: string; updated_at: string; submission_count: number };
       };
     };
     Functions: {
