@@ -360,3 +360,31 @@ export async function togglePublishAsClient(token: string, formId: string, publi
   revalidatePath(`/c/${token}`);
   return { error: null };
 }
+
+export async function deleteFormAsClient(token: string, formId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = createAdminClient() as any;
+
+  const { data: clientRow } = await admin
+    .from("project_clients")
+    .select("project_id")
+    .eq("token", token)
+    .single();
+
+  if (!clientRow) return { error: "Token inválido" };
+
+  const { data: form } = await admin
+    .from("forms")
+    .select("id")
+    .eq("id", formId)
+    .eq("project_id", clientRow.project_id)
+    .single();
+
+  if (!form) return { error: "Sem permissão" };
+
+  const { error } = await admin.from("forms").delete().eq("id", formId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/c/${token}`);
+  return { error: null };
+}
