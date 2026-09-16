@@ -33,6 +33,42 @@ export async function createProject(_prev: unknown, formData: FormData) {
   redirect(`/dashboard/projects/${project.id}`);
 }
 
+export async function renameProject(projectId: string, name: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Não autenticado" };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = createAdminClient() as any;
+  const { error } = await admin
+    .from("projects")
+    .update({ name: name.trim() || "Sem nome" })
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/projects");
+  return { error: null };
+}
+
+export async function updateProjectLogo(projectId: string, logoUrl: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Não autenticado" };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = createAdminClient() as any;
+  const { error } = await admin
+    .from("projects")
+    .update({ logo_url: logoUrl || null })
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/projects");
+  return { error: null };
+}
+
 export async function deleteProject(projectId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
