@@ -76,7 +76,7 @@ export default async function ProjectDetailPage({ params }: Props) {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Formulários</h2>
           <div className="flex items-center gap-2">
-            <ProjectSettingsButton projectId={id} clients={clientList} appUrl={APP_URL} />
+            <ProjectSettingsButton projectId={id} projectName={project.name} projectLogoUrl={project.logo_url} clients={clientList} appUrl={APP_URL} />
             <NewFormButton projectId={id} />
           </div>
         </div>
