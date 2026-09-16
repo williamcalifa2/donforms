@@ -243,24 +243,30 @@ export async function createProjectFormAsClient(token: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
 
+  // Separate queries — nested join can silently return null
   const { data: clientRow } = await admin
     .from("project_clients")
-    .select("project_id, projects(id, user_id)")
+    .select("project_id")
     .eq("token", token)
     .single();
 
-  if (!clientRow) redirect(`/c/${token}`);
+  if (!clientRow?.project_id) redirect(`/c/${token}`);
 
-  const projectId = clientRow.project_id as string;
-  const userId = (clientRow.projects as { id: string; user_id: string }).user_id;
+  const { data: project } = await admin
+    .from("projects")
+    .select("id, user_id")
+    .eq("id", clientRow.project_id)
+    .single();
+
+  if (!project?.user_id) redirect(`/c/${token}`);
 
   const { data: slug } = await admin.rpc("generate_slug", { title: "Novo Formulário" });
 
   const { data: form, error } = await admin
     .from("forms")
     .insert({
-      user_id: userId,
-      project_id: projectId,
+      user_id: project.user_id,
+      project_id: project.id,
       title: "Novo Formulário",
       slug: slug ?? `form-${Date.now()}`,
       settings: DEFAULT_FORM_SETTINGS,
@@ -268,8 +274,13 @@ export async function createProjectFormAsClient(token: string) {
     .select("id")
     .single();
 
-  if (error || !form) redirect(`/c/${token}`);
+  if (error || !form) {
+    console.error("[createProjectFormAsClient] insert error:", error);
+    redirect(`/c/${token}`);
+  }
 
+  revalidatePath(`/c/${token}`);
+  revalidatePath(`/dashboard/projects/${project.id}`);
   redirect(`/c/${token}/forms/${form.id}/edit`);
 }
 
@@ -312,6 +323,7 @@ export async function saveFormAsClient(
   if (error) return { error: error.message };
 
   revalidatePath(`/c/${token}/forms/${formId}/edit`);
+  revalidatePath(`/dashboard`);
   return { error: null };
 }
 
