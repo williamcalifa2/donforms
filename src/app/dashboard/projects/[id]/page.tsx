@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import type { Metadata } from "next";
 import { NewFormButton, ProjectSettingsButton } from "./ProjectDetailClient";
 import { FormsView } from "@/components/dashboard/FormsView";
@@ -22,6 +23,8 @@ export default async function ProjectDetailPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { ownerId } = await resolveWorkspaceContext(user.id);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
 
@@ -29,7 +32,7 @@ export default async function ProjectDetailPage({ params }: Props) {
     .from("projects")
     .select("id, name, logo_url, created_at")
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("user_id", ownerId)
     .single();
 
   if (!project) notFound();

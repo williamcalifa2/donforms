@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import type { Metadata } from "next";
 import { ProjectsPageClient } from "./ProjectsPageClient";
 import { ProjectsView } from "@/components/dashboard/ProjectsView";
@@ -13,13 +14,15 @@ export default async function ProjectsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { ownerId } = await resolveWorkspaceContext(user.id);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
 
   const { data: projects } = await admin
     .from("projects")
     .select("id, name, logo_url, created_at")
-    .eq("user_id", user.id)
+    .eq("user_id", ownerId)
     .order("created_at", { ascending: false });
 
   const enriched = await Promise.all(
