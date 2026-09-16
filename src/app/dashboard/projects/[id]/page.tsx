@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Metadata } from "next";
 import { NewFormButton, ProjectSettingsButton } from "./ProjectDetailClient";
+import { FormsView } from "@/components/dashboard/FormsView";
 import type { FormWithCount } from "@/types/database.types";
 
 export const metadata: Metadata = { title: "Projeto" };
@@ -87,39 +88,7 @@ export default async function ProjectDetailPage({ params }: Props) {
             <p className="text-xs">Crie o primeiro formulário para este projeto.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {formList.map(form => (
-              <div key={form.id} className="border rounded-xl p-4 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-sm truncate">{form.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {form.submission_count ?? 0} resposta{(form.submission_count ?? 0) !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                    form.is_published ? "bg-green-500/10 text-green-400" : "bg-muted text-muted-foreground"
-                  }`}>
-                    {form.is_published ? "Publicado" : "Rascunho"}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <Link href={`/dashboard/forms/${form.id}/edit`}
-                    className="text-xs px-2.5 py-1.5 rounded-md border hover:bg-accent transition-colors">
-                    Editar
-                  </Link>
-                  <Link href={`/dashboard/forms/${form.id}/responses`}
-                    className="text-xs px-2.5 py-1.5 rounded-md border hover:bg-accent transition-colors">
-                    Respostas
-                  </Link>
-                  <Link href={`/dashboard/forms/${form.id}/analytics`}
-                    className="text-xs px-2.5 py-1.5 rounded-md border hover:bg-accent transition-colors">
-                    Analytics
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+          <FormsView forms={formList} appUrl={APP_URL} />
         )}
       </div>
 
