@@ -4,7 +4,7 @@ import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import { renameProject, updateProjectLogo, deleteProject } from "@/app/actions/projects";
 import {
-  PencilSimple, DotsThreeVertical, Trash, FolderOpen, Image,
+  PencilSimple, DotsThreeVertical, Trash, Image,
 } from "@phosphor-icons/react";
 
 interface Project {
@@ -79,34 +79,17 @@ export function ProjectCard({ project }: { project: Project }) {
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
-      {/* Top row: form count + client count */}
-      <div className="flex items-center justify-between mb-3">
-        <span
-          className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide uppercase"
-          style={{ background: "var(--sidebar-active)", color: "var(--accent-c)", border: "1px solid rgba(158,168,255,0.2)" }}
-        >
-          <FolderOpen size={10} weight="duotone" />
-          Projeto
-        </span>
-        <span
-          className="text-[11px] font-medium tabular-nums"
-          style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}
-        >
-          {project.formCount} form · {project.clientCount} cliente{project.clientCount !== 1 ? "s" : ""}
-        </span>
-      </div>
-
-      {/* Logo + Name */}
-      <div className="flex items-start gap-3 mb-1">
+      {/* Logo + Name row */}
+      <div className="flex items-center gap-3 mb-3">
         {/* Avatar / logo */}
         <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-bold shrink-0 cursor-pointer transition-opacity hover:opacity-75"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-semibold shrink-0 cursor-pointer transition-opacity hover:opacity-70"
           style={{ background: "var(--sidebar-active)", color: "var(--accent-c)" }}
           onClick={() => { setMenuOpen(false); setLogoInput(logoUrl); setLogoEditing(true); }}
           title="Alterar logo"
         >
           {logoUrl
-            ? <img src={logoUrl} alt="" className="w-full h-full object-cover rounded-lg" />
+            ? <img src={logoUrl} alt="" className="w-full h-full object-cover rounded-xl" />
             : initials
           }
         </div>
@@ -125,21 +108,24 @@ export function ProjectCard({ project }: { project: Project }) {
                 if (e.key === "Escape") { setNameValue(project.name); setEditing(false); }
               }}
               maxLength={80}
-              className="w-full font-semibold text-[15px] bg-transparent border-b outline-none"
-              style={{ color: "var(--text-primary)", borderColor: "var(--accent-c)", letterSpacing: "-0.01em" }}
+              className="w-full text-[15px] bg-transparent border-b outline-none"
+              style={{ color: "var(--text-primary)", borderColor: "var(--accent-c)", fontWeight: 500 }}
               autoFocus
             />
           ) : (
             <h2
-              className="font-semibold text-[15px] line-clamp-2 cursor-text group/title flex items-start gap-1"
-              style={{ color: "var(--text-primary)", letterSpacing: "-0.01em", lineHeight: "1.35" }}
+              className="text-[15px] truncate cursor-text group/title flex items-center gap-1"
+              style={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: "1.3" }}
               onClick={() => { setEditing(true); setTimeout(() => nameInputRef.current?.select(), 0); }}
               title="Clique para renomear"
             >
-              <span className="flex-1">{nameValue}</span>
-              <PencilSimple size={11} weight="duotone" className="opacity-0 group-hover/title:opacity-30 transition-opacity shrink-0 mt-0.5" />
+              <span className="flex-1 truncate">{nameValue}</span>
+              <PencilSimple size={11} weight="duotone" className="opacity-0 group-hover/title:opacity-25 transition-opacity shrink-0" />
             </h2>
           )}
+          <p className="text-[11px] mt-0.5 tabular-nums" style={{ color: "var(--text-tertiary)" }}>
+            {project.formCount} form{project.formCount !== 1 ? "s" : ""} · {project.clientCount} cliente{project.clientCount !== 1 ? "s" : ""}
+          </p>
         </div>
       </div>
 
