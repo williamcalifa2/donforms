@@ -58,9 +58,13 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 interface Props {
   form: Form;
   appUrl: string;
+  backHref?: string;
+  disableDelete?: boolean;
+  saveFormFn?: (formId: string, payload: { title: string; fields: FormField[]; settings: FormSettings }) => Promise<{ error: string | null }>;
+  togglePublishFn?: (formId: string, publish: boolean) => Promise<{ error: string | null }>;
 }
 
-export function FormEditor({ form, appUrl }: Props) {
+export function FormEditor({ form, appUrl, backHref, disableDelete, saveFormFn, togglePublishFn }: Props) {
   const [title, setTitle] = useState(form.title);
   const [fields, setFields] = useState<FormField[]>(form.fields);
   const [settings, setSettings] = useState<FormSettings>(form.settings);
@@ -94,12 +98,13 @@ export function FormEditor({ form, appUrl }: Props) {
     setSaveStatus("saving");
     const prev = { title: lastSaved.current.title, fields: lastSaved.current.fields };
     startTransition(async () => {
-      const result = await saveForm(form.id, { title: t, fields: f, settings: s }, prev);
+      const fn = saveFormFn ?? ((id, payload) => saveForm(id, payload, prev));
+      const result = await fn(form.id, { title: t, fields: f, settings: s });
       setSaveStatus(result.error ? "error" : "saved");
       if (!result.error) lastSaved.current = { title: t, fields: f, settings: s };
       setTimeout(() => setSaveStatus("idle"), 2000);
     });
-  }, [form.id]);
+  }, [form.id, saveFormFn]);
 
   useEffect(() => {
     // Skip initial render
@@ -128,10 +133,11 @@ export function FormEditor({ form, appUrl }: Props) {
   const handleTogglePublish = useCallback(() => {
     startTransition(async () => {
       const next = !isPublished;
-      const result = await togglePublish(form.id, next);
+      const fn = togglePublishFn ?? togglePublish;
+      const result = await fn(form.id, next);
       if (!result.error) setIsPublished(next);
     });
-  }, [form.id, isPublished]);
+  }, [form.id, isPublished, togglePublishFn]);
 
   // ─── Field CRUD ────────────────────────────────────────────────────────────
   const addField = useCallback((type: FieldType) => {
@@ -185,7 +191,7 @@ export function FormEditor({ form, appUrl }: Props) {
       {/* ── Top bar ── */}
       <header className="border-b bg-background/95 backdrop-blur z-30 shrink-0">
         <div className="flex items-center gap-3 px-4 h-14">
-          <Link href="/dashboard"
+          <Link href={backHref ?? "/dashboard"}
             className="text-muted-foreground hover:text-foreground transition-colors shrink-0" title="Voltar">
             <PhArrowLeft size={17} weight="regular" />
           </Link>
@@ -266,17 +272,19 @@ export function FormEditor({ form, appUrl }: Props) {
             </Button>
 
             {/* Delete */}
-            <button
-              onClick={() => {
-                if (confirm("Excluir este formulário? Esta ação não pode ser desfeita.")) {
-                  startTransition(() => deleteForm(form.id));
-                }
-              }}
-              className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10"
-              title="Excluir formulário"
-            >
-              <PhTrash size={15} weight="duotone" />
-            </button>
+            {!disableDelete && (
+              <button
+                onClick={() => {
+                  if (confirm("Excluir este formulário? Esta ação não pode ser desfeita.")) {
+                    startTransition(() => deleteForm(form.id));
+                  }
+                }}
+                className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10"
+                title="Excluir formulário"
+              >
+                <PhTrash size={15} weight="duotone" />
+              </button>
+            )}
 
             {/* Histórico — último ícone, discreto */}
             <FormHistoryPanel formId={form.id} />
