@@ -4,7 +4,7 @@ import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   SquaresFour, List, DotsThreeVertical, Trash,
-  Eye, EyeSlash, PencilSimple,
+  Eye, EyeSlash, PencilSimple, Link as PhLink,
 } from "@phosphor-icons/react";
 import { deleteFormAsClient, togglePublishAsClient } from "@/app/actions/projects";
 
@@ -13,16 +13,19 @@ const STORAGE_KEY = "donforms-client-view";
 interface Form {
   id: string;
   title: string;
+  slug: string;
   is_published: boolean;
   submission_count: number | null;
+  updated_at: string;
 }
 
 interface Props {
   token: string;
   forms: Form[];
+  appUrl: string;
 }
 
-export function ClientPortalForms({ token, forms }: Props) {
+export function ClientPortalForms({ token, forms, appUrl }: Props) {
   const [view, setView] = useState<"card" | "list">(() => {
     if (typeof window === "undefined") return "list";
     try {
@@ -71,7 +74,7 @@ export function ClientPortalForms({ token, forms }: Props) {
 
       {view === "card" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {forms.map(f => <PortalFormCard key={f.id} form={f} token={token} />)}
+          {forms.map(f => <PortalFormCard key={f.id} form={f} token={token} appUrl={appUrl} />)}
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
@@ -83,11 +86,13 @@ export function ClientPortalForms({ token, forms }: Props) {
 }
 
 // ── Card (matches FormCard visual exactly) ─────────────────────────────────────
-function PortalFormCard({ form, token }: { form: Form; token: string }) {
+function PortalFormCard({ form, token, appUrl }: { form: Form; token: string; appUrl: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [published, setPublished] = useState(form.is_published);
   const [isPending, startTransition] = useTransition();
+  const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const shareUrl = `${appUrl}/f/${form.slug}`;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -110,6 +115,17 @@ function PortalFormCard({ form, token }: { form: Form; token: string }) {
     setPublished(next);
     startTransition(async () => { await togglePublishAsClient(token, form.id, next); });
   };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const formattedDate = new Date(form.updated_at).toLocaleDateString("pt-BR", {
+    day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
 
   return (
     <div className="group relative flex flex-col rounded-xl transition-all duration-200"
@@ -148,11 +164,36 @@ function PortalFormCard({ form, token }: { form: Form; token: string }) {
       </div>
 
       {/* Title */}
-      <h2 className="font-semibold text-[15px] mb-4 line-clamp-2 flex items-start gap-1"
+      <h2 className="font-semibold text-[15px] mb-1 line-clamp-2 flex items-start gap-1"
         style={{ color: "var(--text-primary)", letterSpacing: "-0.01em", lineHeight: 1.35 }}>
         <span className="flex-1">{form.title}</span>
         <PencilSimple size={11} weight="duotone" className="opacity-0 group-hover:opacity-30 transition-opacity shrink-0 mt-0.5" />
       </h2>
+
+      {/* Date */}
+      <p className="text-[11px] mb-4" style={{ color: "var(--text-tertiary)" }}>{formattedDate}</p>
+
+      {/* Share URL */}
+      <button onClick={handleCopy}
+        className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left text-[11px] mb-4 transition-all duration-150"
+        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "var(--text-tertiary)" }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--accent-glow)";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.07)";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-tertiary)";
+        }}
+        title="Clique para copiar link">
+        <PhLink size={12} weight="duotone" className="shrink-0" />
+        <span className="truncate flex-1" style={{ fontFamily: "var(--font-mono)", fontSize: 10 }}>
+          {shareUrl.replace("https://", "")}
+        </span>
+        <span className="shrink-0 font-medium" style={{ color: copied ? "var(--green)" : "inherit" }}>
+          {copied ? "✓" : "Copiar"}
+        </span>
+      </button>
 
       {/* Divider */}
       <div style={{ height: 1, background: "var(--card-border)", marginBottom: 14 }} />

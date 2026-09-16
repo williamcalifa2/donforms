@@ -5,6 +5,8 @@ import type { Metadata } from "next";
 import { NewFormClientButton } from "./NewFormClientButton";
 import { ClientPortalForms } from "./ClientPortalForms";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.com.br";
+
 interface Props {
   params: Promise<{ token: string }>;
 }
@@ -40,16 +42,17 @@ export default async function ClientPortalPage({ params }: Props) {
   // Show ALL forms (draft + published) for the client
   const { data: forms } = await admin
     .from("forms_with_submission_count")
-    .select("id, title, is_published, submission_count, created_at")
+    .select("id, title, slug, is_published, submission_count, updated_at, created_at")
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
 
   const formList = (forms ?? []) as {
-    id: string; title: string; is_published: boolean; submission_count: number | null; created_at: string;
+    id: string; title: string; slug: string; is_published: boolean;
+    submission_count: number | null; updated_at: string; created_at: string;
   }[];
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "48px 24px" }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px" }}>
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
@@ -80,7 +83,7 @@ export default async function ClientPortalPage({ params }: Props) {
       </div>
 
       {/* Forms */}
-      <ClientPortalForms token={token} forms={formList} />
+      <ClientPortalForms token={token} forms={formList} appUrl={APP_URL} />
     </div>
   );
 }
