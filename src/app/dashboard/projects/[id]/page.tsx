@@ -4,7 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Metadata } from "next";
-import { ProjectDetailClient } from "./ProjectDetailClient";
+import { ProjectDetailClient, NewFormButton } from "./ProjectDetailClient";
 import type { FormWithCount } from "@/types/database.types";
 
 export const metadata: Metadata = { title: "Projeto" };
@@ -75,7 +75,7 @@ export default async function ProjectDetailPage({ params }: Props) {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Formulários</h2>
-          <ProjectDetailClient.NewFormButton projectId={id} />
+          <NewFormButton projectId={id} />
         </div>
 
         {formList.length === 0 ? (

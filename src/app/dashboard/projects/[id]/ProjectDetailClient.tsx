@@ -132,6 +132,5 @@ function ProjectDetailClientRoot({ projectId, clients, appUrl }: Props) {
   );
 }
 
-// Static namespace for NewFormButton export
-ProjectDetailClientRoot.NewFormButton = NewFormButton;
 export const ProjectDetailClient = ProjectDetailClientRoot;
+export { NewFormButton };
