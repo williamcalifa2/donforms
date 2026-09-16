@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
-import { SquaresFour, List, Trash } from "@phosphor-icons/react";
-import { deleteFormAsClient } from "@/app/actions/projects";
+import {
+  SquaresFour, List, DotsThreeVertical, Trash,
+  Eye, EyeSlash, PencilSimple,
+} from "@phosphor-icons/react";
+import { deleteFormAsClient, togglePublishAsClient } from "@/app/actions/projects";
 
 const STORAGE_KEY = "donforms-client-view";
 
@@ -25,9 +28,7 @@ export function ClientPortalForms({ token, forms }: Props) {
     try {
       const s = localStorage.getItem(STORAGE_KEY);
       return s === "card" || s === "list" ? s : "list";
-    } catch {
-      return "list";
-    }
+    } catch { return "list"; }
   });
 
   const handleView = (v: "card" | "list") => {
@@ -37,215 +38,236 @@ export function ClientPortalForms({ token, forms }: Props) {
 
   if (forms.length === 0) {
     return (
-      <div style={{
-        border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16,
-        padding: "48px 24px", textAlign: "center", color: "rgba(255,255,255,0.35)",
-      }}>
-        <p style={{ margin: "0 0 8px", fontSize: 14 }}>Nenhum formulário ainda.</p>
-        <p style={{ margin: 0, fontSize: 13 }}>Crie o primeiro usando o botão acima.</p>
+      <div className="rounded-xl flex flex-col items-center justify-center py-12 text-center gap-2"
+        style={{ border: "2px dashed var(--card-border, rgba(255,255,255,0.08))", color: "var(--text-tertiary, rgba(255,255,255,0.35))" }}>
+        <p className="text-sm m-0">Nenhum formulário ainda.</p>
+        <p className="text-xs m-0">Crie o primeiro usando o botão acima.</p>
       </div>
     );
   }
 
   return (
-    <div>
-      {/* Toggle */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 2, padding: 3,
-          borderRadius: 10, background: "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}>
+    <div className="space-y-3">
+      {/* Toggle — same as ViewToggle */}
+      <div className="flex justify-end">
+        <div className="flex items-center rounded-lg p-0.5 gap-0.5"
+          style={{ background: "var(--card-bg, rgba(255,255,255,0.08))", border: "1px solid var(--card-border, rgba(255,255,255,0.12))" }}>
           {(["list", "card"] as const).map(v => (
-            <button
-              key={v}
-              onClick={() => handleView(v)}
+            <button key={v} onClick={() => handleView(v)}
+              className="flex items-center justify-center w-8 h-7 rounded-md transition-all"
               style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 32, height: 28, borderRadius: 7, border: "none", cursor: "pointer",
                 background: view === v ? "rgba(255,255,255,0.15)" : "transparent",
-                color: view === v ? "#fff" : "rgba(255,255,255,0.4)",
-                transition: "all .15s",
+                color: view === v ? "var(--text-primary, #fff)" : "var(--text-tertiary, rgba(255,255,255,0.4))",
+                border: "none", cursor: "pointer",
               }}
-              title={v === "card" ? "Cards" : "Lista"}
-            >
+              title={v === "card" ? "Cards" : "Lista"}>
               {v === "card"
                 ? <SquaresFour size={15} weight={view === v ? "fill" : "regular"} />
-                : <List size={15} weight={view === v ? "bold" : "regular"} />
-              }
+                : <List size={15} weight={view === v ? "bold" : "regular"} />}
             </button>
           ))}
         </div>
       </div>
 
-      {view === "list" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {forms.map(form => (
-            <FormListRow key={form.id} form={form} token={token} />
-          ))}
+      {view === "card" ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {forms.map(f => <PortalFormCard key={f.id} form={f} token={token} />)}
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-          {forms.map(form => (
-            <FormCardItem key={form.id} form={form} token={token} />
-          ))}
+        <div className="flex flex-col gap-1.5">
+          {forms.map(f => <PortalFormRow key={f.id} form={f} token={token} />)}
         </div>
       )}
     </div>
   );
 }
 
-function FormListRow({ form, token }: { form: Form; token: string }) {
-  const [pending, startTransition] = useTransition();
+// ── Card (matches FormCard visual exactly) ─────────────────────────────────────
+function PortalFormCard({ form, token }: { form: Form; token: string }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [published, setPublished] = useState(form.is_published);
+  const [isPending, startTransition] = useTransition();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const handleDelete = () => {
-    if (!confirm(`Excluir "${form.title}"?`)) return;
-    startTransition(async () => {
-      await deleteFormAsClient(token, form.id);
-    });
+    setMenuOpen(false);
+    if (!confirm(`Excluir "${form.title}"? Esta ação não pode ser desfeita.`)) return;
+    startTransition(async () => { await deleteFormAsClient(token, form.id); });
+  };
+
+  const handleToggle = () => {
+    setMenuOpen(false);
+    const next = !published;
+    setPublished(next);
+    startTransition(async () => { await togglePublishAsClient(token, form.id, next); });
   };
 
   return (
-    <div style={{
-      border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
-      background: "rgba(255,255,255,0.025)", padding: "14px 16px",
-      display: "flex", alignItems: "center", gap: 12,
-      opacity: pending ? 0.5 : 1, transition: "opacity .2s",
-    }}>
-      {/* Status dot */}
-      <div style={{
-        width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-        background: form.is_published ? "#4ade80" : "rgba(255,255,255,0.2)",
-      }} />
-
-      {/* Title + meta */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          margin: "0 0 2px", fontSize: 14, fontWeight: 600,
-          color: "rgba(255,255,255,0.9)", whiteSpace: "nowrap",
-          overflow: "hidden", textOverflow: "ellipsis",
-        }}>
-          {form.title}
-        </p>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-          {form.submission_count ?? 0} resposta{(form.submission_count ?? 0) !== 1 ? "s" : ""}
+    <div className="group relative flex flex-col rounded-xl transition-all duration-200"
+      style={{
+        background: "var(--card-bg)", border: "1px solid var(--card-border)",
+        padding: 18, boxShadow: "var(--shadow-card)",
+        opacity: isPending ? 0.6 : 1,
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = "var(--card-border-hover)";
+        e.currentTarget.style.boxShadow = "var(--shadow-card), 0 0 0 1px var(--accent-glow)";
+        e.currentTarget.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = "var(--card-border)";
+        e.currentTarget.style.boxShadow = "var(--shadow-card)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      {/* Status + count */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide uppercase"
+          style={published
+            ? { background: "rgba(34,197,94,0.10)", color: "var(--green)", border: "1px solid rgba(34,197,94,0.2)" }
+            : { background: "rgba(255,255,255,0.05)", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <span className="rounded-full" style={{
+            width: 5, height: 5, flexShrink: 0,
+            background: published ? "var(--green)" : "var(--text-tertiary)",
+            boxShadow: published ? "0 0 5px var(--green)" : "none",
+          }} />
+          {published ? "Publicado" : "Rascunho"}
+        </span>
+        <span className="text-[11px] font-medium tabular-nums" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>
+          {form.submission_count ?? 0} resp.
         </span>
       </div>
 
+      {/* Title */}
+      <h2 className="font-semibold text-[15px] mb-4 line-clamp-2 flex items-start gap-1"
+        style={{ color: "var(--text-primary)", letterSpacing: "-0.01em", lineHeight: 1.35 }}>
+        <span className="flex-1">{form.title}</span>
+        <PencilSimple size={11} weight="duotone" className="opacity-0 group-hover:opacity-30 transition-opacity shrink-0 mt-0.5" />
+      </h2>
+
+      {/* Divider */}
+      <div style={{ height: 1, background: "var(--card-border)", marginBottom: 14 }} />
+
       {/* Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        <Link href={`/c/${token}/forms/${form.id}/edit`} style={{
-          fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 7,
-          background: "rgba(158,168,255,0.12)", color: "#9ea8ff",
-          textDecoration: "none", border: "1px solid rgba(158,168,255,0.2)",
-        }}>
+      <div className="flex items-center gap-1">
+        <Link href={`/c/${token}/forms/${form.id}/edit`}
+          className="flex-1 flex items-center justify-center h-8 rounded-lg text-[12px] font-semibold transition-all duration-150"
+          style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "var(--accent-glow)";
+            (e.currentTarget as HTMLAnchorElement).style.boxShadow = "var(--shadow-accent)";
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "var(--accent-soft)";
+            (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
+          }}>
           Editar
         </Link>
-        <button
-          onClick={handleDelete}
-          disabled={pending}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 30, height: 30, borderRadius: 7, border: "1px solid rgba(255,80,80,0.2)",
-            background: "rgba(255,80,80,0.08)", color: "rgba(255,100,100,0.7)",
-            cursor: "pointer",
-          }}
-          title="Excluir"
-        >
-          <Trash size={14} weight="bold" />
-        </button>
+
+        {/* More menu */}
+        <div className="relative" ref={menuRef}>
+          <button onClick={() => setMenuOpen(v => !v)}
+            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: "var(--text-secondary)", border: "none", background: "transparent", cursor: "pointer" }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+            }}>
+            <DotsThreeVertical size={15} weight="bold" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 bottom-full mb-1.5 w-44 rounded-xl py-1.5 z-50"
+              style={{
+                background: "var(--card-bg)", border: "1px solid var(--card-border)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
+              }}>
+              <button onClick={handleToggle} disabled={isPending}
+                className="w-full text-left px-3 py-1.5 text-[12px] font-medium flex items-center gap-2.5 transition-colors"
+                style={{ color: published ? "var(--amber)" : "var(--green)", border: "none", background: "transparent", cursor: "pointer" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                {published ? <EyeSlash size={13} weight="duotone" /> : <Eye size={13} weight="duotone" />}
+                {published ? "Despublicar" : "Publicar"}
+              </button>
+              <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 8px" }} />
+              <button onClick={handleDelete} disabled={isPending}
+                className="w-full text-left px-3 py-1.5 text-[12px] font-medium flex items-center gap-2.5 transition-colors"
+                style={{ color: "rgba(239,68,68,0.75)", border: "none", background: "transparent", cursor: "pointer" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.color = "var(--red)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(239,68,68,0.75)"; }}>
+                <Trash size={13} weight="duotone" /> Excluir
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function FormCardItem({ form, token }: { form: Form; token: string }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
+// ── Row (matches FormRow visual) ───────────────────────────────────────────────
+function PortalFormRow({ form, token }: { form: Form; token: string }) {
+  const [isPending, startTransition] = useTransition();
 
   const handleDelete = () => {
-    setMenuOpen(false);
-    if (!confirm(`Excluir "${form.title}"?`)) return;
-    startTransition(async () => {
-      await deleteFormAsClient(token, form.id);
-    });
+    if (!confirm(`Excluir "${form.title}"? Esta ação não pode ser desfeita.`)) return;
+    startTransition(async () => { await deleteFormAsClient(token, form.id); });
   };
 
   return (
-    <div style={{
-      border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14,
-      background: "rgba(255,255,255,0.025)", padding: "18px 18px 14px",
-      display: "flex", flexDirection: "column", gap: 10,
-      opacity: pending ? 0.5 : 1, position: "relative",
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-        <p style={{
-          margin: 0, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)",
-          lineHeight: 1.4,
-        }}>
-          {form.title}
-        </p>
-        {/* ... menu */}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 26, height: 26, borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)",
-              background: "transparent", color: "rgba(255,255,255,0.4)",
-              cursor: "pointer", flexShrink: 0, fontSize: 14, letterSpacing: 1,
-            }}
-            title="Opções"
-          >
-            ···
-          </button>
-          {menuOpen && (
-            <>
-              <div
-                onClick={() => setMenuOpen(false)}
-                style={{ position: "fixed", inset: 0, zIndex: 10 }}
-              />
-              <div style={{
-                position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 20,
-                background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8, overflow: "hidden", minWidth: 120,
-              }}>
-                <button
-                  onClick={handleDelete}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    width: "100%", padding: "9px 14px", border: "none",
-                    background: "transparent", color: "rgba(255,100,100,0.85)",
-                    cursor: "pointer", fontSize: 13,
-                  }}
-                >
-                  <Trash size={13} weight="bold" />
-                  Excluir
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+    <div className="group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-150"
+      style={{
+        background: "var(--card-bg)", border: "1px solid var(--card-border)",
+        opacity: isPending ? 0.5 : 1,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--card-border-hover)"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--card-border)"; }}>
+      {/* Status dot */}
+      <span className="rounded-full shrink-0" style={{
+        width: 6, height: 6,
+        background: form.is_published ? "var(--green)" : "var(--text-tertiary)",
+        boxShadow: form.is_published ? "0 0 4px var(--green)" : "none",
+      }} />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{
-          width: 6, height: 6, borderRadius: "50%",
-          background: form.is_published ? "#4ade80" : "rgba(255,255,255,0.2)",
-        }} />
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-          {form.is_published ? "Publicado" : "Rascunho"} · {form.submission_count ?? 0} resp.
-        </span>
-      </div>
+      {/* Title */}
+      <span className="flex-1 text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
+        {form.title}
+      </span>
 
-      <Link href={`/c/${token}/forms/${form.id}/edit`} style={{
-        fontSize: 12, fontWeight: 600, padding: "7px 0", borderRadius: 8,
-        background: "rgba(158,168,255,0.12)", color: "#9ea8ff",
-        textDecoration: "none", border: "1px solid rgba(158,168,255,0.2)",
-        textAlign: "center", display: "block",
-      }}>
-        Editar
-      </Link>
+      {/* Count */}
+      <span className="text-[11px] tabular-nums shrink-0" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>
+        {form.submission_count ?? 0} resp.
+      </span>
+
+      {/* Actions — visible on hover */}
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Link href={`/c/${token}/forms/${form.id}/edit`}
+          className="h-7 px-2.5 flex items-center rounded-lg text-[11px] font-semibold transition-all"
+          style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}>
+          Editar
+        </Link>
+        <button onClick={handleDelete} disabled={isPending}
+          className="h-7 w-7 flex items-center justify-center rounded-lg transition-colors"
+          style={{ color: "rgba(239,68,68,0.6)", border: "none", background: "transparent", cursor: "pointer" }}
+          title="Excluir"
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.color = "var(--red)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(239,68,68,0.6)"; }}>
+          <Trash size={13} weight="duotone" />
+        </button>
+      </div>
     </div>
   );
 }
