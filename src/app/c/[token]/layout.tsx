@@ -4,7 +4,7 @@ export const metadata: Metadata = { title: "Portal do Cliente" };
 
 export default function ClientPortalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
+    <div className="dark" style={{
       minHeight: "100dvh",
       background: "#06060e",
       fontFamily: "system-ui, -apple-system, sans-serif",
