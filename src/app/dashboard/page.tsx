@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import { NewFormButton } from "@/components/dashboard/NewFormButton";
-import { FormCard } from "@/components/dashboard/FormCard";
+import { FormsView } from "@/components/dashboard/FormsView";
 import type { FormWithCount } from "@/types/database.types";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.com.br";
@@ -89,14 +89,8 @@ export default async function DashboardPage({ searchParams }: Props) {
         </div>
       )}
 
-      {/* Grid */}
-      {list.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((form) => (
-            <FormCard key={form.id} form={form} appUrl={APP_URL} />
-          ))}
-        </div>
-      )}
+      {/* Forms */}
+      {list.length > 0 && <FormsView forms={list} appUrl={APP_URL} />}
     </div>
   );
 }

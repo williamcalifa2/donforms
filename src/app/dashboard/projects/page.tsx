@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Metadata } from "next";
 import { ProjectsPageClient } from "./ProjectsPageClient";
-import { ProjectCard } from "@/components/dashboard/ProjectCard";
+import { ProjectsView } from "@/components/dashboard/ProjectsView";
 
 export const metadata: Metadata = { title: "Projetos" };
 
@@ -72,11 +72,7 @@ export default async function ProjectsPage() {
           <ProjectsPageClient />
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {enriched.map(p => (
-            <ProjectCard key={p.id} project={p} />
-          ))}
-        </div>
+        <ProjectsView projects={enriched} />
       )}
     </div>
   );
