@@ -45,6 +45,8 @@ export default async function ClientFormEditPage({ params }: Props) {
       appUrl={appUrl}
       backHref={`/c/${token}`}
       disableDelete
+      responsesHref={`/c/${token}/forms/${formId}`}
+      analyticsHref={`/c/${token}/forms/${formId}/analytics`}
       saveFormFn={boundSave}
       togglePublishFn={boundToggle}
       deleteFormFn={boundDelete}

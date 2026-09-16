@@ -23,6 +23,8 @@ import {
   SidebarSimple,
   ArrowLineLeft,
   ArrowLineRight,
+  ChatCircle as PhChatCircle,
+  ChartBar as PhChartBar,
 } from "@phosphor-icons/react";
 // lucide kept only for PanelLeftClose/PanelLeftOpen used in collapse tab
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -61,12 +63,14 @@ interface Props {
   appUrl: string;
   backHref?: string;
   disableDelete?: boolean;
+  responsesHref?: string;
+  analyticsHref?: string;
   saveFormFn?: (formId: string, payload: { title: string; fields: FormField[]; settings: FormSettings }) => Promise<{ error: string | null }>;
   togglePublishFn?: (formId: string, publish: boolean) => Promise<{ error: string | null }>;
   deleteFormFn?: (formId: string) => Promise<{ error: string | null }>;
 }
 
-export function FormEditor({ form, appUrl, backHref, disableDelete, saveFormFn, togglePublishFn, deleteFormFn }: Props) {
+export function FormEditor({ form, appUrl, backHref, disableDelete, responsesHref, analyticsHref, saveFormFn, togglePublishFn, deleteFormFn }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(form.title);
   const [fields, setFields] = useState<FormField[]>(form.fields);
@@ -242,6 +246,22 @@ export function FormEditor({ form, appUrl, backHref, disableDelete, saveFormFn, 
                 </>
               )}
             </button>
+
+            {/* Responses + Analytics — portal context */}
+            {responsesHref && (
+              <Link href={responsesHref}
+                className="text-xs text-muted-foreground hover:text-foreground border rounded-md px-2 py-1 transition-colors flex items-center gap-1"
+                title="Respostas">
+                <PhChatCircle size={13} weight="duotone" /> Respostas
+              </Link>
+            )}
+            {analyticsHref && (
+              <Link href={analyticsHref}
+                className="text-xs text-muted-foreground hover:text-foreground border rounded-md px-2 py-1 transition-colors flex items-center gap-1"
+                title="Analytics">
+                <PhChartBar size={13} weight="duotone" /> Analytics
+              </Link>
+            )}
 
             {/* Preview (always visible) */}
             <Link

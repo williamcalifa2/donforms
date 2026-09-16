@@ -14,9 +14,10 @@ import {
 interface Props {
   form: FormWithCount;
   appUrl: string;
+  projectName?: string;
 }
 
-export function FormCard({ form, appUrl }: Props) {
+export function FormCard({ form, appUrl, projectName }: Props) {
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -147,7 +148,7 @@ export function FormCard({ form, appUrl }: Props) {
         </h2>
       )}
       <p className="text-[11px] mb-4" style={{ color: "var(--text-tertiary)" }}>
-        {formatDate(form.updated_at)}
+        {projectName ?? formatDate(form.updated_at)}
       </p>
 
       {/* Share URL */}

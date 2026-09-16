@@ -79,7 +79,7 @@ export default async function ClientFormAnalyticsPage({ params }: Props) {
 
   return (
     <div style={s.page}>
-      <Link href={`/c/${token}`} style={s.back}>
+      <Link href={`/c/${token}/forms/${formId}/edit`} style={s.back}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M15 18l-6-6 6-6"/>
         </svg>

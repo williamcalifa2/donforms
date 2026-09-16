@@ -29,13 +29,22 @@ export default async function DashboardPage({ searchParams }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminClient = createAdminClient() as any;
 
-  const { data: forms } = await adminClient
-    .from("forms_with_submission_count")
-    .select("*")
-    .eq("user_id", ownerId)
-    .order("created_at", { ascending: false });
+  const [{ data: forms }, { data: projects }] = await Promise.all([
+    adminClient
+      .from("forms_with_submission_count")
+      .select("*")
+      .eq("user_id", ownerId)
+      .order("created_at", { ascending: false }),
+    adminClient
+      .from("projects")
+      .select("id, name")
+      .eq("user_id", ownerId),
+  ]);
 
   const list = (forms ?? []) as FormWithCount[];
+  const projectNames: Record<string, string> = Object.fromEntries(
+    ((projects ?? []) as { id: string; name: string }[]).map(p => [p.id, p.name])
+  );
 
   return (
     <div className="space-y-6">
@@ -90,7 +99,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       )}
 
       {/* Forms */}
-      {list.length > 0 && <FormsView forms={list} appUrl={APP_URL} />}
+      {list.length > 0 && <FormsView forms={list} appUrl={APP_URL} projectNames={projectNames} />}
     </div>
   );
 }

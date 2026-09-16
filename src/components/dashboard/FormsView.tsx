@@ -11,9 +11,10 @@ const STORAGE_KEY = "donforms-view-forms";
 interface Props {
   forms: FormWithCount[];
   appUrl: string;
+  projectNames?: Record<string, string>;
 }
 
-export function FormsView({ forms, appUrl }: Props) {
+export function FormsView({ forms, appUrl, projectNames }: Props) {
   const [view, setView] = useState<"card" | "list">("card");
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export function FormsView({ forms, appUrl }: Props) {
 
       {view === "card" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {forms.map(f => <FormCard key={f.id} form={f} appUrl={appUrl} />)}
+          {forms.map(f => <FormCard key={f.id} form={f} appUrl={appUrl} projectName={f.project_id ? projectNames?.[f.project_id] : undefined} />)}
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
