@@ -160,9 +160,11 @@ function FormListRow({ form, token }: { form: Form; token: string }) {
 }
 
 function FormCardItem({ form, token }: { form: Form; token: string }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const handleDelete = () => {
+    setMenuOpen(false);
     if (!confirm(`Excluir "${form.title}"?`)) return;
     startTransition(async () => {
       await deleteFormAsClient(token, form.id);
@@ -174,7 +176,7 @@ function FormCardItem({ form, token }: { form: Form; token: string }) {
       border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14,
       background: "rgba(255,255,255,0.025)", padding: "18px 18px 14px",
       display: "flex", flexDirection: "column", gap: 10,
-      opacity: pending ? 0.5 : 1,
+      opacity: pending ? 0.5 : 1, position: "relative",
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <p style={{
@@ -183,19 +185,47 @@ function FormCardItem({ form, token }: { form: Form; token: string }) {
         }}>
           {form.title}
         </p>
-        <button
-          onClick={handleDelete}
-          disabled={pending}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 26, height: 26, borderRadius: 6, border: "1px solid rgba(255,80,80,0.2)",
-            background: "rgba(255,80,80,0.08)", color: "rgba(255,100,100,0.7)",
-            cursor: "pointer", flexShrink: 0,
-          }}
-          title="Excluir"
-        >
-          <Trash size={12} weight="bold" />
-        </button>
+        {/* ... menu */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 26, height: 26, borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)",
+              background: "transparent", color: "rgba(255,255,255,0.4)",
+              cursor: "pointer", flexShrink: 0, fontSize: 14, letterSpacing: 1,
+            }}
+            title="Opções"
+          >
+            ···
+          </button>
+          {menuOpen && (
+            <>
+              <div
+                onClick={() => setMenuOpen(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 10 }}
+              />
+              <div style={{
+                position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 20,
+                background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8, overflow: "hidden", minWidth: 120,
+              }}>
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    width: "100%", padding: "9px 14px", border: "none",
+                    background: "transparent", color: "rgba(255,100,100,0.85)",
+                    cursor: "pointer", fontSize: 13,
+                  }}
+                >
+                  <Trash size={13} weight="bold" />
+                  Excluir
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

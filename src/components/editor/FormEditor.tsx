@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useTransition, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { saveForm, togglePublish, deleteForm } from "@/app/actions/forms";
 import { FormHistoryPanel } from "./FormHistoryPanel";
 import { FlowView } from "./FlowView";
@@ -62,9 +63,11 @@ interface Props {
   disableDelete?: boolean;
   saveFormFn?: (formId: string, payload: { title: string; fields: FormField[]; settings: FormSettings }) => Promise<{ error: string | null }>;
   togglePublishFn?: (formId: string, publish: boolean) => Promise<{ error: string | null }>;
+  deleteFormFn?: (formId: string) => Promise<{ error: string | null }>;
 }
 
-export function FormEditor({ form, appUrl, backHref, disableDelete, saveFormFn, togglePublishFn }: Props) {
+export function FormEditor({ form, appUrl, backHref, disableDelete, saveFormFn, togglePublishFn, deleteFormFn }: Props) {
+  const router = useRouter();
   const [title, setTitle] = useState(form.title);
   const [fields, setFields] = useState<FormField[]>(form.fields);
   const [settings, setSettings] = useState<FormSettings>(form.settings);
@@ -272,11 +275,18 @@ export function FormEditor({ form, appUrl, backHref, disableDelete, saveFormFn, 
             </Button>
 
             {/* Delete */}
-            {!disableDelete && (
+            {(!disableDelete || deleteFormFn) && (
               <button
                 onClick={() => {
                   if (confirm("Excluir este formulário? Esta ação não pode ser desfeita.")) {
-                    startTransition(() => deleteForm(form.id));
+                    if (deleteFormFn) {
+                      startTransition(async () => {
+                        const res = await deleteFormFn(form.id);
+                        if (!res.error) router.push(backHref ?? "/dashboard");
+                      });
+                    } else {
+                      startTransition(() => deleteForm(form.id));
+                    }
                   }
                 }}
                 className="text-muted-foreground hover:text-destructive transition-colors p-1.5 rounded-md hover:bg-destructive/10"

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FormEditor } from "@/components/editor/FormEditor";
-import { saveFormAsClient, togglePublishAsClient } from "@/app/actions/projects";
+import { saveFormAsClient, togglePublishAsClient, deleteFormAsClient } from "@/app/actions/projects";
 import type { Form } from "@/types/database.types";
 
 interface Props {
@@ -37,6 +37,7 @@ export default async function ClientFormEditPage({ params }: Props) {
   // Bind token into the actions so FormEditor can call them without knowing the token
   const boundSave = saveFormAsClient.bind(null, token);
   const boundToggle = togglePublishAsClient.bind(null, token);
+  const boundDelete = deleteFormAsClient.bind(null, token);
 
   return (
     <FormEditor
@@ -46,6 +47,7 @@ export default async function ClientFormEditPage({ params }: Props) {
       disableDelete
       saveFormFn={boundSave}
       togglePublishFn={boundToggle}
+      deleteFormFn={boundDelete}
     />
   );
 }
