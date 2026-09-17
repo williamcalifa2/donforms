@@ -229,7 +229,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+type SettingsTab = "design" | "comportamento" | "integracoes" | "avancado";
+
+const TABS: { id: SettingsTab; label: string }[] = [
+  { id: "design", label: "Design" },
+  { id: "comportamento", label: "Comportamento" },
+  { id: "integracoes", label: "Integrações" },
+  { id: "avancado", label: "Avançado" },
+];
+
 export function SettingsPanel({ settings, onChange, formUrl, formId, fields = [] }: Props) {
+  const [tab, setTab] = useState<SettingsTab>("design");
   const [bgUploading, setBgUploading] = useState(false);
   const [bgError, setBgError] = useState<string | null>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
@@ -286,421 +296,435 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
     setUtmTerm("");
   };
 
+  const mqlField = fields.find(f => f.isMqlField);
+
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6">
-
-      {/* ── UTM Builder ───────────────────────────────────────── */}
-      <Section title="UTM Builder">
-        {/* Presets de canal */}
-        <div className="flex flex-wrap gap-1.5">
-          {CHANNEL_PRESETS.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => applyPreset(p)}
-              className="text-[10px] px-2 py-1 rounded-md transition-colors"
-              style={{
-                background: utmSource === p.source && utmMedium === p.medium
-                  ? "rgba(123,123,255,0.18)"
-                  : "rgba(255,255,255,0.06)",
-                color: utmSource === p.source && utmMedium === p.medium
-                  ? "hsl(238 100% 74%)"
-                  : "rgba(255,255,255,0.55)",
-                border: `1px solid ${utmSource === p.source && utmMedium === p.medium ? "hsl(238 100% 74% / 0.4)" : "transparent"}`,
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Campos UTM */}
-        <div className="space-y-2">
-          {[
-            { key: "utm_source", val: utmSource, set: (v: string) => setUtmSource(v.replace(/ /g, "_")), ph: "facebook, google, email…" },
-            { key: "utm_medium", val: utmMedium, set: (v: string) => setUtmMedium(v.replace(/ /g, "_")), ph: "cpc, paid_social, email…" },
-            { key: "utm_campaign", val: utmCampaign, set: (v: string) => setUtmCampaign(v.replace(/ /g, "_")), ph: "nome-da-campanha" },
-            { key: "utm_content", val: utmContent, set: (v: string) => setUtmContent(v.replace(/ /g, "_")), ph: "variacao-criativo" },
-            { key: "utm_term", val: utmTerm, set: (v: string) => setUtmTerm(v.replace(/ /g, "_")), ph: "palavra-chave" },
-          ].map(({ key, val, set, ph }) => (
-            <div key={key} className="space-y-0.5">
-              <span
-                className="block text-[9px] font-mono tracking-wider"
-                style={{ color: val ? "hsl(238 100% 74% / 0.8)" : "rgba(255,255,255,0.3)" }}
-              >
-                {key}
-              </span>
-              <input
-                type="text"
-                value={val}
-                onChange={(e) => set(e.target.value)}
-                placeholder={ph}
-                className="w-full h-7 rounded-md border bg-background text-foreground text-xs px-2 placeholder:text-muted-foreground focus-visible:outline-none transition-colors"
-                style={{
-                  borderColor: val ? "hsl(238 100% 74% / 0.3)" : "hsl(var(--border))",
-                  outline: "none",
-                }}
-                onFocus={e => (e.currentTarget.style.borderColor = "hsl(238 100% 74% / 0.6)")}
-                onBlur={e => (e.currentTarget.style.borderColor = val ? "hsl(238 100% 74% / 0.3)" : "hsl(var(--border))")}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* URL gerada */}
-        <div className="space-y-1.5">
-          <div
-            className="w-full text-[10px] font-mono px-2 py-2 rounded-lg break-all leading-relaxed"
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* ── Tab bar ─────────────────────────────────────────────── */}
+      <div className="flex border-b border-border shrink-0 px-1 pt-1" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="relative px-3 py-2 text-[11px] font-medium transition-colors"
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: hasUtm ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)",
+              color: tab === t.id ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
             }}
           >
-            {generatedUrl}
-          </div>
-          <button
-            onClick={handleCopy}
-            disabled={!hasUtm}
-            className="w-full h-8 rounded-lg text-xs font-medium transition-all disabled:opacity-30"
-            style={{ background: copied ? "rgba(34,197,94,0.15)" : "rgba(123,123,255,0.15)", color: copied ? "#4ade80" : "hsl(238 100% 74%)" }}
-          >
-            {copied ? "✓ Copiado!" : "Copiar link com UTM"}
-          </button>
-        </div>
-      </Section>
-
-
-      {/* ── Aparência ─────────────────────────────────────────── */}
-      <Section title="Aparência">
-        {/* Botão tema Don */}
-        <button
-          onClick={() => onChange(DON_THEME)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-          style={{
-            background: "rgba(125,131,189,0.12)",
-            border: "1px solid rgba(125,131,189,0.3)",
-            color: "#CBCDE5",
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(125,131,189,0.2)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(125,131,189,0.12)"; }}
-        >
-          <span style={{ fontSize: "14px" }}>✦</span>
-          Aplicar tema Don (padrão)
-        </button>
-
-        <div className="space-y-2">
-          <label className="text-xs font-medium">Cor primária</label>
-          <div className="flex flex-wrap gap-2">
-            {PRESET_COLORS.map((color) => (
-              <button key={color} onClick={() => onChange({ primaryColor: color })} title={color}
-                className="h-7 w-7 rounded-full border-2 transition-all hover:scale-110"
-                style={{
-                  backgroundColor: color,
-                  borderColor: settings.primaryColor === color ? color : "transparent",
-                  outline: settings.primaryColor === color ? `2px solid ${color}` : "none",
-                  outlineOffset: "2px",
-                }} />
-            ))}
-            <div className="relative h-7 w-7">
-              <input type="color" value={settings.primaryColor}
-                onChange={(e) => onChange({ primaryColor: e.target.value })}
-                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" title="Cor personalizada" />
-              <div className="h-7 w-7 rounded-full border-2 border-dashed border-muted-foreground flex items-center justify-center text-[10px] text-muted-foreground"
-                style={{ backgroundColor: settings.primaryColor }}>+</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Cor de fundo</label>
-          <div className="flex items-center gap-2">
-            <input type="color" value={settings.bgColor}
-              onChange={(e) => onChange({ bgColor: e.target.value })}
-              className="h-9 w-16 rounded-lg border border-input cursor-pointer p-0.5" />
-            <Input value={settings.bgColor}
-              onChange={(e) => onChange({ bgColor: e.target.value })}
-              placeholder="#ffffff" className="font-mono text-xs" />
-          </div>
-        </div>
-
-        <div
-          className="rounded-xl p-4 border"
-          style={{ backgroundColor: settings.bgColor }}
-        >
-          <p className="text-sm font-medium mb-3" style={{ color: "#1a1a1a" }}>Preview</p>
-          <button className="px-4 py-2 rounded-lg text-white text-xs font-medium"
-            style={{ backgroundColor: settings.ctaColor || settings.primaryColor }}>
-            {settings.ctaText || "Próximo →"}
-          </button>
-        </div>
-
-        {/* Fonte */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Fonte do formulário</label>
-          <select
-            value={settings.fontFamily ?? "Darker Grotesque"}
-            onChange={(e) => onChange({ fontFamily: e.target.value })}
-            className="w-full h-8 rounded-md border border-input bg-background text-foreground text-xs px-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            {GOOGLE_FONTS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Imagem de fundo */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Imagem de fundo</label>
-          <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
-          <div className="flex items-center gap-2">
-            {settings.bgImageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={settings.bgImageUrl} alt="" className="h-9 w-14 rounded object-cover border border-input flex-shrink-0" />
+            {t.label}
+            {tab === t.id && (
+              <span
+                className="absolute bottom-0 left-0 right-0 h-px"
+                style={{ background: "rgba(255,255,255,0.7)" }}
+              />
             )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Tab content ─────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-5">
+
+        {/* ══ DESIGN ══════════════════════════════════════════════ */}
+        {tab === "design" && (
+          <>
             <button
-              type="button"
-              disabled={bgUploading}
-              onClick={() => bgInputRef.current?.click()}
-              className="h-9 flex-1 rounded-md border border-dashed border-input text-xs text-muted-foreground hover:border-foreground/40 transition-colors disabled:opacity-50"
+              onClick={() => onChange(DON_THEME)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: "rgba(125,131,189,0.12)", border: "1px solid rgba(125,131,189,0.3)", color: "#CBCDE5" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(125,131,189,0.2)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(125,131,189,0.12)"; }}
             >
-              {bgUploading ? "Enviando..." : settings.bgImageUrl ? "Trocar imagem" : "Escolher arquivo"}
+              <span style={{ fontSize: "14px" }}>✦</span>
+              Aplicar tema Don (padrão)
             </button>
-            {settings.bgImageUrl && (
-              <button
-                type="button"
-                onClick={() => onChange({ bgImageUrl: null })}
-                className="text-[10px] px-2 py-1 rounded"
-                style={{ color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer" }}
-              >
-                Remover
-              </button>
-            )}
-          </div>
-          {bgError && <p className="text-[11px] text-red-400">{bgError}</p>}
-          <p className="text-[11px] text-muted-foreground">Sobreposta sobre a cor de fundo. Use imagem escura ou ajuste opacidade.</p>
-        </div>
 
-        {/* Tela de boas-vindas */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium">Tela de boas-vindas</p>
-            <p className="text-[11px] text-muted-foreground">Exibe o botão "Começar" antes do primeiro campo</p>
-          </div>
-          <button
-            role="switch"
-            aria-checked={settings.showWelcome !== false}
-            onClick={() => onChange({ showWelcome: settings.showWelcome === false ? true : false })}
-            className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            style={{ backgroundColor: settings.showWelcome === false ? "rgba(255,255,255,0.12)" : settings.primaryColor }}
-          >
-            <span
-              className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
-              style={{ transform: settings.showWelcome === false ? "translateX(2px)" : "translateX(18px)" }}
-            />
-          </button>
-        </div>
-
-        {/* CTA customizável */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Texto do botão CTA</label>
-          <Input
-            value={settings.ctaText ?? ""}
-            onChange={(e) => onChange({ ctaText: e.target.value || null })}
-            placeholder="Próximo →"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Cor do botão CTA</label>
-          <div className="flex items-center gap-2">
-            <input type="color" value={settings.ctaColor || settings.primaryColor}
-              onChange={(e) => onChange({ ctaColor: e.target.value })}
-              className="h-9 w-16 rounded-lg border border-input cursor-pointer p-0.5" />
-            <Input value={settings.ctaColor ?? ""}
-              onChange={(e) => onChange({ ctaColor: e.target.value || null })}
-              placeholder="Igual à cor primária" className="font-mono text-xs" />
-            {settings.ctaColor && (
-              <button
-                onClick={() => onChange({ ctaColor: null })}
-                className="text-[10px] px-2 py-1 rounded"
-                style={{ color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer" }}
-              >
-                Reset
-              </button>
-            )}
-          </div>
-        </div>
-      </Section>
-
-      {/* ── Mensagem final ────────────────────────────────────── */}
-      <Section title="Conclusão">
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Mensagem de confirmação</label>
-          <textarea value={settings.thankYouMessage}
-            onChange={(e) => onChange({ thankYouMessage: e.target.value })}
-            rows={3} maxLength={300}
-            placeholder="Obrigado! Suas respostas foram enviadas."
-            className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground" />
-          <p className="text-xs text-muted-foreground text-right">{settings.thankYouMessage.length}/300</p>
-        </div>
-        <Input label="Redirecionar após envio (opcional)"
-          value={settings.redirectUrl ?? ""}
-          onChange={(e) => onChange({ redirectUrl: e.target.value || null })}
-          placeholder="https://seusite.com/obrigado" type="url" />
-      </Section>
-
-      {/* ── Pixel & Tags ──────────────────────────────────────── */}
-      <Section title="Pixel & Rastreamento">
-        <Input
-          label="Meta Pixel ID"
-          value={settings.metaPixelId ?? ""}
-          onChange={(e) => onChange({ metaPixelId: e.target.value || null })}
-          placeholder="123456789012345"
-        />
-        <p className="text-[11px] text-muted-foreground -mt-1">
-          Dispara <code className="bg-muted px-1 rounded text-[10px]">PageView</code> ao carregar e <code className="bg-muted px-1 rounded text-[10px]">Lead</code> ao concluir.
-        </p>
-        <Input
-          label="Google Tag ID (GTM ou GA4)"
-          value={settings.googleTagId ?? ""}
-          onChange={(e) => onChange({ googleTagId: e.target.value || null })}
-          placeholder="G-XXXXXXXX ou GTM-XXXXXX"
-        />
-      </Section>
-
-      {/* ── Notificações ──────────────────────────────────────── */}
-      <Section title="Notificações">
-        <Input
-          label="Email para notificações"
-          value={settings.notificationEmail ?? ""}
-          onChange={(e) => onChange({ notificationEmail: e.target.value || null })}
-          placeholder="voce@email.com"
-          type="email"
-        />
-        <p className="text-[11px] text-muted-foreground -mt-1">
-          Recebe um email a cada nova resposta. Requer <code className="bg-muted px-1 rounded text-[10px]">RESEND_API_KEY</code> no servidor.
-        </p>
-        <WebhookSection settings={settings} onChange={onChange} formId={formId} />
-      </Section>
-
-      {/* ── Qualificação MQL (status) ─────────────────────────── */}
-      {(() => {
-        const mqlField = fields.find(f => f.isMqlField);
-        return (
-          <Section title="Qualificação MQL">
-            {mqlField ? (
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                style={{ background: "rgba(125,131,189,0.10)", border: "1px solid rgba(125,131,189,0.25)" }}>
-                <span style={{ color: "#7D83BD", fontSize: "14px" }}>✓</span>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium" style={{ color: "#CBCDE5" }}>
-                    Campo: <span className="font-semibold">{mqlField.label}</span>
-                  </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
-                    {mqlField.type === "multiple_choice"
-                      ? `${(mqlField.mqlQualifyingOptions ?? []).length} opção(ões) qualificam`
-                      : mqlField.type === "yes_no"
-                        ? `Qualifica quando: ${mqlField.mqlYesQualifies !== false ? "Sim" : "Não"}`
-                        : `Mínimo: ${(mqlField.mqlMinValue ?? 1).toLocaleString("pt-BR")}`
-                    }
-                  </p>
+            <Section title="Cores">
+              <div className="space-y-2">
+                <label className="text-xs font-medium">Cor primária</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_COLORS.map((color) => (
+                    <button key={color} onClick={() => onChange({ primaryColor: color })} title={color}
+                      className="h-7 w-7 rounded-full border-2 transition-all hover:scale-110"
+                      style={{
+                        backgroundColor: color,
+                        borderColor: settings.primaryColor === color ? color : "transparent",
+                        outline: settings.primaryColor === color ? `2px solid ${color}` : "none",
+                        outlineOffset: "2px",
+                      }} />
+                  ))}
+                  <div className="relative h-7 w-7">
+                    <input type="color" value={settings.primaryColor}
+                      onChange={(e) => onChange({ primaryColor: e.target.value })}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" title="Cor personalizada" />
+                    <div className="h-7 w-7 rounded-full border-2 border-dashed border-muted-foreground flex items-center justify-center text-[10px] text-muted-foreground"
+                      style={{ backgroundColor: settings.primaryColor }}>+</div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">
-                Nenhum campo de qualificação configurado. Selecione um campo em <strong>Perguntas</strong> e ative <em>Qualificação MQL</em>.
-              </p>
-            )}
-          </Section>
-        );
-      })()}
 
-      {/* ── LGPD / GDPR ───────────────────────────────────────── */}
-      <Section title="LGPD / Privacidade">
-        <label className="flex items-center gap-2.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.lgpdEnabled ?? false}
-            onChange={e => onChange({ lgpdEnabled: e.target.checked })}
-            className="rounded accent-primary"
-          />
-          <span className="text-sm font-medium">Exigir consentimento antes de enviar</span>
-        </label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Cor de fundo</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={settings.bgColor}
+                    onChange={(e) => onChange({ bgColor: e.target.value })}
+                    className="h-9 w-16 rounded-lg border border-input cursor-pointer p-0.5" />
+                  <Input value={settings.bgColor}
+                    onChange={(e) => onChange({ bgColor: e.target.value })}
+                    placeholder="#ffffff" className="font-mono text-xs" />
+                </div>
+              </div>
+            </Section>
 
-        {settings.lgpdEnabled && (
-          <div className="space-y-3 pl-1">
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Texto do consentimento</label>
-              <textarea
-                rows={3}
-                value={settings.lgpdText ?? ""}
-                onChange={e => onChange({ lgpdText: e.target.value || null })}
-                placeholder="Ao enviar este formulário, você concorda com o tratamento dos seus dados pessoais conforme nossa Política de Privacidade."
-                className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground resize-none"
-              />
-            </div>
-            <Input
-              label="URL da Política de Privacidade"
-              value={settings.lgpdPolicyUrl ?? ""}
-              onChange={e => onChange({ lgpdPolicyUrl: e.target.value || null })}
-              placeholder="https://suaempresa.com.br/privacidade"
-              type="url"
-            />
-          </div>
+            <Section title="Tipografia & Fundo">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Fonte</label>
+                <select
+                  value={settings.fontFamily ?? "Darker Grotesque"}
+                  onChange={(e) => onChange({ fontFamily: e.target.value })}
+                  className="w-full h-8 rounded-md border border-input bg-background text-foreground text-xs px-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  {GOOGLE_FONTS.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Imagem de fundo</label>
+                <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
+                <div className="flex items-center gap-2">
+                  {settings.bgImageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={settings.bgImageUrl} alt="" className="h-9 w-14 rounded object-cover border border-input flex-shrink-0" />
+                  )}
+                  <button
+                    type="button"
+                    disabled={bgUploading}
+                    onClick={() => bgInputRef.current?.click()}
+                    className="h-9 flex-1 rounded-md border border-dashed border-input text-xs text-muted-foreground hover:border-foreground/40 transition-colors disabled:opacity-50"
+                  >
+                    {bgUploading ? "Enviando..." : settings.bgImageUrl ? "Trocar imagem" : "Escolher arquivo"}
+                  </button>
+                  {settings.bgImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => onChange({ bgImageUrl: null })}
+                      className="text-[10px] px-2 py-1 rounded"
+                      style={{ color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer" }}
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
+                {bgError && <p className="text-[11px] text-red-400">{bgError}</p>}
+                <p className="text-[11px] text-muted-foreground">Sobreposta sobre a cor de fundo.</p>
+              </div>
+            </Section>
+
+            <Section title="Botão CTA">
+              <div
+                className="rounded-xl p-4 border"
+                style={{ backgroundColor: settings.bgColor }}
+              >
+                <button className="px-4 py-2 rounded-lg text-white text-xs font-medium"
+                  style={{ backgroundColor: settings.ctaColor || settings.primaryColor }}>
+                  {settings.ctaText || "Próximo →"}
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Texto</label>
+                <Input
+                  value={settings.ctaText ?? ""}
+                  onChange={(e) => onChange({ ctaText: e.target.value || null })}
+                  placeholder="Próximo →"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Cor</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={settings.ctaColor || settings.primaryColor}
+                    onChange={(e) => onChange({ ctaColor: e.target.value })}
+                    className="h-9 w-16 rounded-lg border border-input cursor-pointer p-0.5" />
+                  <Input value={settings.ctaColor ?? ""}
+                    onChange={(e) => onChange({ ctaColor: e.target.value || null })}
+                    placeholder="Igual à cor primária" className="font-mono text-xs" />
+                  {settings.ctaColor && (
+                    <button
+                      onClick={() => onChange({ ctaColor: null })}
+                      className="text-[10px] px-2 py-1 rounded shrink-0"
+                      style={{ color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer" }}
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            </Section>
+          </>
         )}
 
-        <label className="flex items-center gap-2.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={settings.anonymizeIp ?? false}
-            onChange={e => onChange({ anonymizeIp: e.target.checked })}
-            className="rounded accent-primary"
-          />
-          <span className="text-sm">Anonimizar IP (armazena apenas os 3 primeiros octetos)</span>
-        </label>
+        {/* ══ COMPORTAMENTO ════════════════════════════════════════ */}
+        {tab === "comportamento" && (
+          <>
+            <Section title="Tela de boas-vindas">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium">Exibir tela inicial</p>
+                  <p className="text-[11px] text-muted-foreground">Mostra o botão "Começar" antes do primeiro campo</p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={settings.showWelcome !== false}
+                  onClick={() => onChange({ showWelcome: settings.showWelcome === false ? true : false })}
+                  className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                  style={{ backgroundColor: settings.showWelcome === false ? "rgba(255,255,255,0.12)" : settings.primaryColor }}
+                >
+                  <span
+                    className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
+                    style={{ transform: settings.showWelcome === false ? "translateX(2px)" : "translateX(18px)" }}
+                  />
+                </button>
+              </div>
+            </Section>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Retenção de dados (dias)</label>
-          <input
-            type="number"
-            min={1}
-            value={settings.retentionDays ?? ""}
-            onChange={e => onChange({ retentionDays: e.target.value ? Number(e.target.value) : null })}
-            placeholder="Indefinido"
-            className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
-          />
-          <p className="text-[11px] text-muted-foreground">
-            Respostas mais antigas que este prazo serão removidas automaticamente pelo job de limpeza diário.
-          </p>
-        </div>
-      </Section>
+            <Section title="Conclusão">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Mensagem de confirmação</label>
+                <textarea value={settings.thankYouMessage}
+                  onChange={(e) => onChange({ thankYouMessage: e.target.value })}
+                  rows={3} maxLength={300}
+                  placeholder="Obrigado! Suas respostas foram enviadas."
+                  className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground" />
+                <p className="text-xs text-muted-foreground text-right">{settings.thankYouMessage.length}/300</p>
+              </div>
+              <Input label="Redirecionar após envio"
+                value={settings.redirectUrl ?? ""}
+                onChange={(e) => onChange({ redirectUrl: e.target.value || null })}
+                placeholder="https://seusite.com/obrigado" type="url" />
+            </Section>
 
-      {/* ── Controle de acesso ────────────────────────────────── */}
-      <Section title="Controle de acesso">
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Máximo de respostas</label>
-          <input
-            type="number"
-            min={1}
-            value={settings.maxResponses ?? ""}
-            onChange={(e) => onChange({ maxResponses: e.target.value ? Number(e.target.value) : null })}
-            placeholder="Ilimitado"
-            className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
-          />
-          <p className="text-[11px] text-muted-foreground">Fecha automaticamente após atingir o limite.</p>
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Fechar após</label>
-          <input
-            type="datetime-local"
-            value={settings.closeAt ? settings.closeAt.slice(0, 16) : ""}
-            onChange={(e) => onChange({ closeAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-            className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-          <p className="text-[11px] text-muted-foreground">Fecha automaticamente após a data escolhida.</p>
-        </div>
-      </Section>
+            <Section title="Controle de acesso">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Máximo de respostas</label>
+                <input
+                  type="number" min={1}
+                  value={settings.maxResponses ?? ""}
+                  onChange={(e) => onChange({ maxResponses: e.target.value ? Number(e.target.value) : null })}
+                  placeholder="Ilimitado"
+                  className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
+                />
+                <p className="text-[11px] text-muted-foreground">Fecha automaticamente após atingir o limite.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Fechar após</label>
+                <input
+                  type="datetime-local"
+                  value={settings.closeAt ? settings.closeAt.slice(0, 16) : ""}
+                  onChange={(e) => onChange({ closeAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <p className="text-[11px] text-muted-foreground">Fecha automaticamente após a data escolhida.</p>
+              </div>
+            </Section>
+          </>
+        )}
 
+        {/* ══ INTEGRAÇÕES ══════════════════════════════════════════ */}
+        {tab === "integracoes" && (
+          <>
+            <Section title="Rastreamento">
+              <Input
+                label="Meta Pixel ID"
+                value={settings.metaPixelId ?? ""}
+                onChange={(e) => onChange({ metaPixelId: e.target.value || null })}
+                placeholder="123456789012345"
+              />
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Dispara <code className="bg-muted px-1 rounded text-[10px]">PageView</code> ao carregar,{" "}
+                <code className="bg-muted px-1 rounded text-[10px]">Lead</code> ao concluir e{" "}
+                <code className="bg-muted px-1 rounded text-[10px]">MQL</code> quando qualificado.
+              </p>
+              <Input
+                label="Google Tag ID (GTM ou GA4)"
+                value={settings.googleTagId ?? ""}
+                onChange={(e) => onChange({ googleTagId: e.target.value || null })}
+                placeholder="G-XXXXXXXX ou GTM-XXXXXX"
+              />
+            </Section>
+
+            <Section title="Notificações">
+              <Input
+                label="Email para notificações"
+                value={settings.notificationEmail ?? ""}
+                onChange={(e) => onChange({ notificationEmail: e.target.value || null })}
+                placeholder="voce@email.com"
+                type="email"
+              />
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Recebe um email a cada nova resposta.
+              </p>
+            </Section>
+
+            <Section title="Webhook">
+              <WebhookSection settings={settings} onChange={onChange} formId={formId} />
+            </Section>
+
+            <Section title="Qualificação MQL">
+              {mqlField ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
+                  style={{ background: "rgba(125,131,189,0.10)", border: "1px solid rgba(125,131,189,0.25)" }}>
+                  <span style={{ color: "#7D83BD", fontSize: "14px" }}>✓</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium" style={{ color: "#CBCDE5" }}>
+                      Campo: <span className="font-semibold">{mqlField.label}</span>
+                    </p>
+                    <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      {mqlField.type === "multiple_choice"
+                        ? `${(mqlField.mqlQualifyingOptions ?? []).length} opção(ões) qualificam`
+                        : mqlField.type === "yes_no"
+                          ? `Qualifica quando: ${mqlField.mqlYesQualifies !== false ? "Sim" : "Não"}`
+                          : `Mínimo: ${(mqlField.mqlMinValue ?? 1).toLocaleString("pt-BR")}`
+                      }
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  Nenhum campo configurado. Em <strong>Perguntas</strong>, ative <em>Qualificação MQL</em> em um campo.
+                </p>
+              )}
+            </Section>
+          </>
+        )}
+
+        {/* ══ AVANÇADO ════════════════════════════════════════════ */}
+        {tab === "avancado" && (
+          <>
+            <Section title="UTM Builder">
+              <div className="flex flex-wrap gap-1.5">
+                {CHANNEL_PRESETS.map((p) => (
+                  <button
+                    key={p.label}
+                    onClick={() => applyPreset(p)}
+                    className="text-[10px] px-2 py-1 rounded-md transition-colors"
+                    style={{
+                      background: utmSource === p.source && utmMedium === p.medium
+                        ? "rgba(123,123,255,0.18)" : "rgba(255,255,255,0.06)",
+                      color: utmSource === p.source && utmMedium === p.medium
+                        ? "hsl(238 100% 74%)" : "rgba(255,255,255,0.55)",
+                      border: `1px solid ${utmSource === p.source && utmMedium === p.medium ? "hsl(238 100% 74% / 0.4)" : "transparent"}`,
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { key: "utm_source", val: utmSource, set: (v: string) => setUtmSource(v.replace(/ /g, "_")), ph: "facebook, google, email…" },
+                  { key: "utm_medium", val: utmMedium, set: (v: string) => setUtmMedium(v.replace(/ /g, "_")), ph: "cpc, paid_social, email…" },
+                  { key: "utm_campaign", val: utmCampaign, set: (v: string) => setUtmCampaign(v.replace(/ /g, "_")), ph: "nome-da-campanha" },
+                  { key: "utm_content", val: utmContent, set: (v: string) => setUtmContent(v.replace(/ /g, "_")), ph: "variacao-criativo" },
+                  { key: "utm_term", val: utmTerm, set: (v: string) => setUtmTerm(v.replace(/ /g, "_")), ph: "palavra-chave" },
+                ].map(({ key, val, set, ph }) => (
+                  <div key={key} className="space-y-0.5">
+                    <span className="block text-[9px] font-mono tracking-wider"
+                      style={{ color: val ? "hsl(238 100% 74% / 0.8)" : "rgba(255,255,255,0.3)" }}>
+                      {key}
+                    </span>
+                    <input
+                      type="text" value={val}
+                      onChange={(e) => set(e.target.value)}
+                      placeholder={ph}
+                      className="w-full h-7 rounded-md border bg-background text-foreground text-xs px-2 placeholder:text-muted-foreground focus-visible:outline-none transition-colors"
+                      style={{ borderColor: val ? "hsl(238 100% 74% / 0.3)" : "hsl(var(--border))" }}
+                      onFocus={e => (e.currentTarget.style.borderColor = "hsl(238 100% 74% / 0.6)")}
+                      onBlur={e => (e.currentTarget.style.borderColor = val ? "hsl(238 100% 74% / 0.3)" : "hsl(var(--border))")}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="w-full text-[10px] font-mono px-2 py-2 rounded-lg break-all leading-relaxed"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: hasUtm ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)" }}>
+                  {generatedUrl}
+                </div>
+                <button
+                  onClick={handleCopy}
+                  disabled={!hasUtm}
+                  className="w-full h-8 rounded-lg text-xs font-medium transition-all disabled:opacity-30"
+                  style={{ background: copied ? "rgba(34,197,94,0.15)" : "rgba(123,123,255,0.15)", color: copied ? "#4ade80" : "hsl(238 100% 74%)" }}
+                >
+                  {copied ? "✓ Copiado!" : "Copiar link com UTM"}
+                </button>
+              </div>
+            </Section>
+
+            <Section title="LGPD / Privacidade">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox"
+                  checked={settings.lgpdEnabled ?? false}
+                  onChange={e => onChange({ lgpdEnabled: e.target.checked })}
+                  className="rounded accent-primary" />
+                <span className="text-sm font-medium">Exigir consentimento antes de enviar</span>
+              </label>
+
+              {settings.lgpdEnabled && (
+                <div className="space-y-3 pl-1">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Texto do consentimento</label>
+                    <textarea
+                      rows={3}
+                      value={settings.lgpdText ?? ""}
+                      onChange={e => onChange({ lgpdText: e.target.value || null })}
+                      placeholder="Ao enviar este formulário, você concorda com o tratamento dos seus dados pessoais conforme nossa Política de Privacidade."
+                      className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground resize-none"
+                    />
+                  </div>
+                  <Input
+                    label="URL da Política de Privacidade"
+                    value={settings.lgpdPolicyUrl ?? ""}
+                    onChange={e => onChange({ lgpdPolicyUrl: e.target.value || null })}
+                    placeholder="https://suaempresa.com.br/privacidade"
+                    type="url"
+                  />
+                </div>
+              )}
+
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox"
+                  checked={settings.anonymizeIp ?? false}
+                  onChange={e => onChange({ anonymizeIp: e.target.checked })}
+                  className="rounded accent-primary" />
+                <span className="text-sm">Anonimizar IP (3 primeiros octetos)</span>
+              </label>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Retenção de dados (dias)</label>
+                <input
+                  type="number" min={1}
+                  value={settings.retentionDays ?? ""}
+                  onChange={e => onChange({ retentionDays: e.target.value ? Number(e.target.value) : null })}
+                  placeholder="Indefinido"
+                  className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Respostas mais antigas serão removidas automaticamente.
+                </p>
+              </div>
+            </Section>
+          </>
+        )}
+
+      </div>
     </div>
   );
 }
