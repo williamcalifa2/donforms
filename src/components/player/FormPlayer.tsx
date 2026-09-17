@@ -323,6 +323,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const answersRef = useRef<Record<string, string>>({});
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [disqualifyData, setDisqualifyData] = useState<{ message?: string; url?: string } | null>(null);
   const sid = useRef(sessionId());
@@ -402,13 +403,13 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
   const validate = useCallback((): boolean => {
     if (field.type === "statement") return true;
     if (!field.required) return true;
-    const val = (answers[field.id] ?? "").trim();
+    const val = (answersRef.current[field.id] ?? "").trim();
     if (!val) { setFieldError("Este campo é obrigatório."); return false; }
     if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
       setFieldError("Digite um email válido."); return false;
     }
     return true;
-  }, [field, answers]);
+  }, [field]);
 
   const handleNext = useCallback(async () => {
     setFieldError(undefined);
@@ -520,7 +521,11 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
 
   const handleChange = useCallback((value: string) => {
     setFieldError(undefined);
-    setAnswers(prev => ({ ...prev, [field.id]: value }));
+    setAnswers(prev => {
+      const next = { ...prev, [field.id]: value };
+      answersRef.current = next;
+      return next;
+    });
   }, [field.id]);
 
   const inputFieldIndex = field ? inputFields.findIndex(f => f.id === field.id) : -1;
