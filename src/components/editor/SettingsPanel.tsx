@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
+import { uploadFormBgImage } from "@/app/actions/forms";
 import type { FormField, FormSettings, WebhookLog } from "@/types/database.types";
 
 const PRESET_COLORS = [
@@ -229,6 +230,27 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function SettingsPanel({ settings, onChange, formUrl, formId, fields = [] }: Props) {
+  const [bgUploading, setBgUploading] = useState(false);
+  const [bgError, setBgError] = useState<string | null>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBgUploading(true);
+    setBgError(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    const { error, url } = await uploadFormBgImage(formId, fd);
+    if (error || !url) {
+      setBgError(error ?? "Erro ao fazer upload");
+    } else {
+      onChange({ bgImageUrl: url });
+    }
+    setBgUploading(false);
+    if (bgInputRef.current) bgInputRef.current.value = "";
+  };
+
   const [utmSource, setUtmSource] = useState("");
   const [utmMedium, setUtmMedium] = useState("");
   const [utmCampaign, setUtmCampaign] = useState("");
@@ -428,13 +450,33 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
 
         {/* Imagem de fundo */}
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Imagem de fundo (URL)</label>
-          <Input
-            value={settings.bgImageUrl ?? ""}
-            onChange={(e) => onChange({ bgImageUrl: e.target.value || null })}
-            placeholder="https://images.unsplash.com/..."
-            type="url"
-          />
+          <label className="text-xs font-medium">Imagem de fundo</label>
+          <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
+          <div className="flex items-center gap-2">
+            {settings.bgImageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={settings.bgImageUrl} alt="" className="h-9 w-14 rounded object-cover border border-input flex-shrink-0" />
+            )}
+            <button
+              type="button"
+              disabled={bgUploading}
+              onClick={() => bgInputRef.current?.click()}
+              className="h-9 flex-1 rounded-md border border-dashed border-input text-xs text-muted-foreground hover:border-foreground/40 transition-colors disabled:opacity-50"
+            >
+              {bgUploading ? "Enviando..." : settings.bgImageUrl ? "Trocar imagem" : "Escolher arquivo"}
+            </button>
+            {settings.bgImageUrl && (
+              <button
+                type="button"
+                onClick={() => onChange({ bgImageUrl: null })}
+                className="text-[10px] px-2 py-1 rounded"
+                style={{ color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer" }}
+              >
+                Remover
+              </button>
+            )}
+          </div>
+          {bgError && <p className="text-[11px] text-red-400">{bgError}</p>}
           <p className="text-[11px] text-muted-foreground">Sobreposta sobre a cor de fundo. Use imagem escura ou ajuste opacidade.</p>
         </div>
 

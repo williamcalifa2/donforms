@@ -262,6 +262,32 @@ export async function updateSubmissionStatus(submissionId: string, status: strin
   return { error: null };
 }
 
+// ─── Upload imagem de fundo ────────────────────────────────────────────────────
+export async function uploadFormBgImage(formId: string, formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Não autenticado", url: null };
+
+  const file = formData.get("file") as File | null;
+  if (!file || !file.size) return { error: "Arquivo não enviado", url: null };
+
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const path = `form-bg/${formId}.${ext}`;
+
+  const admin = createAdminClient() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { error: uploadError } = await admin.storage
+    .from("form-assets")
+    .upload(path, file, { upsert: true, contentType: file.type });
+
+  if (uploadError) return { error: uploadError.message, url: null };
+
+  const { data: urlData } = admin.storage.from("form-assets").getPublicUrl(path);
+  const url = urlData?.publicUrl ? `${urlData.publicUrl}?t=${Date.now()}` : null;
+  if (!url) return { error: "Erro ao obter URL", url: null };
+
+  return { error: null, url };
+}
+
 // ─── Deletar form ─────────────────────────────────────────────────────────────
 export async function deleteForm(formId: string) {
   const supabase = await createClient();
