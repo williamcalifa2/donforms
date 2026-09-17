@@ -7,6 +7,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveWorkspaceContext, canEditForms, canDeleteForms } from "@/lib/workspace/getWorkspaceOwner";
 import type { FormField, FormSettings } from "@/types/database.types";
 
+// Random 8-char alphanumeric slug (Typeform style)
+function randomSlug(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
 // Helper: supabase client sem type-checking de tabela
 async function db() {
   const client = await createClient();
@@ -48,16 +54,12 @@ export async function createForm() {
     redirect(`/dashboard?error=${encodeURIComponent("Profile: " + profileError.message)}`);
   }
 
-  const { data: slug } = await client.rpc("generate_slug", {
-    title: "Novo Formulário",
-  });
-
   const { data: form, error } = await client
     .from("forms")
     .insert({
       user_id: ownerId,
       title: "Novo Formulário",
-      slug: slug ?? `form-${Date.now()}`,
+      slug: randomSlug(),
       settings: {
         primaryColor: "#7D83BD",
         bgColor: "#000000",
@@ -101,14 +103,10 @@ export async function duplicateForm(formId: string) {
 
   if (fetchError || !original) return { error: "Formulário não encontrado" };
 
-  const { data: newSlug } = await client.rpc("generate_slug", {
-    title: `${original.title} (cópia)`,
-  });
-
   const { error: insertError } = await client.from("forms").insert({
     user_id: ownerId,
     title: `${original.title} (cópia)`,
-    slug: newSlug ?? `form-copy-${Date.now()}`,
+    slug: randomSlug(),
     fields: original.fields,
     settings: original.settings,
     is_published: false,

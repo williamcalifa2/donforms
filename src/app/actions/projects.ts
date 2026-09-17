@@ -9,6 +9,11 @@ import type { FormField, FormSettings } from "@/types/database.types";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.com.br";
 
+function randomSlug(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
 function genToken() {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -230,15 +235,13 @@ export async function createProjectForm(projectId: string) {
     .eq("id", projectId)
     .single();
 
-  const { data: slug } = await admin.rpc("generate_slug", { title: "Novo Formulário" });
-
   const { data: form, error } = await admin
     .from("forms")
     .insert({
       user_id: ownerId,
       project_id: projectId,
       title: "Novo Formulário",
-      slug: slug ?? `form-${Date.now()}`,
+      slug: randomSlug(),
       settings: { ...DEFAULT_FORM_SETTINGS, logoUrl: project?.logo_url ?? null },
     })
     .select("id")
@@ -273,15 +276,13 @@ export async function createProjectFormAsClient(token: string) {
 
   if (!project?.user_id) redirect(`/c/${token}`);
 
-  const { data: slug } = await admin.rpc("generate_slug", { title: "Novo Formulário" });
-
   const { data: form, error } = await admin
     .from("forms")
     .insert({
       user_id: project.user_id,
       project_id: project.id,
       title: "Novo Formulário",
-      slug: slug ?? `form-${Date.now()}`,
+      slug: randomSlug(),
       settings: { ...DEFAULT_FORM_SETTINGS, logoUrl: project?.logo_url ?? null },
     })
     .select("id")
