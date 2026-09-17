@@ -10,7 +10,6 @@ const PRESET_COLORS = [
   "#eab308", "#22c55e", "#06b6d4", "#0ea5e9", "#64748b", "#18181b",
 ];
 
-const DON_THEME = { primaryColor: "#7D83BD", bgColor: "#000000" };
 
 const GOOGLE_FONTS = [
   { label: "Darker Grotesque (padrão)", value: "Darker Grotesque" },
@@ -229,17 +228,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-type SettingsTab = "design" | "comportamento" | "integracoes" | "avancado";
+type SettingsTab = "design" | "comportamento" | "integracoes";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "design", label: "Design" },
   { id: "comportamento", label: "Comportamento" },
   { id: "integracoes", label: "Integrações" },
-  { id: "avancado", label: "Avançado" },
 ];
+
+const DARK_THEME = { primaryColor: "#7D83BD", bgColor: "#080810" };
+const LIGHT_THEME = { primaryColor: "#7D83BD", bgColor: "#f5f5f7" };
 
 export function SettingsPanel({ settings, onChange, formUrl, formId, fields = [] }: Props) {
   const [tab, setTab] = useState<SettingsTab>("design");
+  const isDarkTheme = parseInt(settings.bgColor.replace("#", ""), 16) < 0x888888;
   const [bgUploading, setBgUploading] = useState(false);
   const [bgError, setBgError] = useState<string | null>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
@@ -331,16 +333,33 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
         {/* ══ DESIGN ══════════════════════════════════════════════ */}
         {tab === "design" && (
           <>
-            <button
-              onClick={() => onChange(DON_THEME)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: "rgba(125,131,189,0.12)", border: "1px solid rgba(125,131,189,0.3)", color: "#CBCDE5" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(125,131,189,0.2)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(125,131,189,0.12)"; }}
-            >
-              <span style={{ fontSize: "14px" }}>✦</span>
-              Aplicar tema Don (padrão)
-            </button>
+            {/* Theme toggle */}
+            <div className="flex gap-1.5 p-1 rounded-lg" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <button
+                onClick={() => onChange(DARK_THEME)}
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs font-medium transition-all"
+                style={{
+                  background: isDarkTheme ? "rgba(255,255,255,0.1)" : "transparent",
+                  color: isDarkTheme ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
+                  border: isDarkTheme ? "1px solid rgba(255,255,255,0.12)" : "1px solid transparent",
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                Dark
+              </button>
+              <button
+                onClick={() => onChange(LIGHT_THEME)}
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md text-xs font-medium transition-all"
+                style={{
+                  background: !isDarkTheme ? "rgba(255,255,255,0.1)" : "transparent",
+                  color: !isDarkTheme ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
+                  border: !isDarkTheme ? "1px solid rgba(255,255,255,0.12)" : "1px solid transparent",
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                Light
+              </button>
+            </div>
 
             <Section title="Cores">
               <div className="space-y-2">
@@ -532,6 +551,60 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
                 <p className="text-[11px] text-muted-foreground">Fecha automaticamente após a data escolhida.</p>
               </div>
             </Section>
+
+            <Section title="LGPD / Privacidade">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox"
+                  checked={settings.lgpdEnabled ?? false}
+                  onChange={e => onChange({ lgpdEnabled: e.target.checked })}
+                  className="rounded accent-primary" />
+                <span className="text-sm font-medium">Exigir consentimento antes de enviar</span>
+              </label>
+
+              {settings.lgpdEnabled && (
+                <div className="space-y-3 pl-1">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Texto do consentimento</label>
+                    <textarea
+                      rows={3}
+                      value={settings.lgpdText ?? ""}
+                      onChange={e => onChange({ lgpdText: e.target.value || null })}
+                      placeholder="Ao enviar este formulário, você concorda com o tratamento dos seus dados pessoais conforme nossa Política de Privacidade."
+                      className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground resize-none"
+                    />
+                  </div>
+                  <Input
+                    label="URL da Política de Privacidade"
+                    value={settings.lgpdPolicyUrl ?? ""}
+                    onChange={e => onChange({ lgpdPolicyUrl: e.target.value || null })}
+                    placeholder="https://suaempresa.com.br/privacidade"
+                    type="url"
+                  />
+                </div>
+              )}
+
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox"
+                  checked={settings.anonymizeIp ?? false}
+                  onChange={e => onChange({ anonymizeIp: e.target.checked })}
+                  className="rounded accent-primary" />
+                <span className="text-sm">Anonimizar IP (3 primeiros octetos)</span>
+              </label>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Retenção de dados (dias)</label>
+                <input
+                  type="number" min={1}
+                  value={settings.retentionDays ?? ""}
+                  onChange={e => onChange({ retentionDays: e.target.value ? Number(e.target.value) : null })}
+                  placeholder="Indefinido"
+                  className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Respostas mais antigas serão removidas automaticamente.
+                </p>
+              </div>
+            </Section>
           </>
         )}
 
@@ -600,12 +673,7 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
                 </p>
               )}
             </Section>
-          </>
-        )}
 
-        {/* ══ AVANÇADO ════════════════════════════════════════════ */}
-        {tab === "avancado" && (
-          <>
             <Section title="UTM Builder">
               <div className="flex flex-wrap gap-1.5">
                 {CHANNEL_PRESETS.map((p) => (
@@ -665,60 +733,6 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
                 >
                   {copied ? "✓ Copiado!" : "Copiar link com UTM"}
                 </button>
-              </div>
-            </Section>
-
-            <Section title="LGPD / Privacidade">
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox"
-                  checked={settings.lgpdEnabled ?? false}
-                  onChange={e => onChange({ lgpdEnabled: e.target.checked })}
-                  className="rounded accent-primary" />
-                <span className="text-sm font-medium">Exigir consentimento antes de enviar</span>
-              </label>
-
-              {settings.lgpdEnabled && (
-                <div className="space-y-3 pl-1">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">Texto do consentimento</label>
-                    <textarea
-                      rows={3}
-                      value={settings.lgpdText ?? ""}
-                      onChange={e => onChange({ lgpdText: e.target.value || null })}
-                      placeholder="Ao enviar este formulário, você concorda com o tratamento dos seus dados pessoais conforme nossa Política de Privacidade."
-                      className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground resize-none"
-                    />
-                  </div>
-                  <Input
-                    label="URL da Política de Privacidade"
-                    value={settings.lgpdPolicyUrl ?? ""}
-                    onChange={e => onChange({ lgpdPolicyUrl: e.target.value || null })}
-                    placeholder="https://suaempresa.com.br/privacidade"
-                    type="url"
-                  />
-                </div>
-              )}
-
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox"
-                  checked={settings.anonymizeIp ?? false}
-                  onChange={e => onChange({ anonymizeIp: e.target.checked })}
-                  className="rounded accent-primary" />
-                <span className="text-sm">Anonimizar IP (3 primeiros octetos)</span>
-              </label>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Retenção de dados (dias)</label>
-                <input
-                  type="number" min={1}
-                  value={settings.retentionDays ?? ""}
-                  onChange={e => onChange({ retentionDays: e.target.value ? Number(e.target.value) : null })}
-                  placeholder="Indefinido"
-                  className="w-full h-9 rounded-lg border border-input bg-background text-foreground px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Respostas mais antigas serão removidas automaticamente.
-                </p>
               </div>
             </Section>
           </>
