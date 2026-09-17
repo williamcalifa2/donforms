@@ -40,18 +40,7 @@ export default async function PublicFormPage({ params }: Props) {
 
   if (error || !form) notFound();
 
-  // Fetch workspace logo from owner's profile
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (supabase as any)
-    .from("profiles")
-    .select("workspace_logo_url")
-    .eq("id", form!.user_id)
-    .single() as { data: { workspace_logo_url: string | null } | null };
-
-  const settings = {
-    ...form!.settings,
-    logoUrl: form!.settings.logoUrl ?? profile?.workspace_logo_url ?? null,
-  };
+  const settings = { ...form!.settings };
 
   // Check access control: maxResponses
   if (form!.settings.maxResponses) {
