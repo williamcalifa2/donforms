@@ -438,6 +438,26 @@ export function SettingsPanel({ settings, onChange, formUrl, formId, fields = []
           <p className="text-[11px] text-muted-foreground">Sobreposta sobre a cor de fundo. Use imagem escura ou ajuste opacidade.</p>
         </div>
 
+        {/* Tela de boas-vindas */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium">Tela de boas-vindas</p>
+            <p className="text-[11px] text-muted-foreground">Exibe o botão "Começar" antes do primeiro campo</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={settings.showWelcome !== false}
+            onClick={() => onChange({ showWelcome: settings.showWelcome === false ? true : false })}
+            className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ backgroundColor: settings.showWelcome === false ? "rgba(255,255,255,0.12)" : settings.primaryColor }}
+          >
+            <span
+              className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"
+              style={{ transform: settings.showWelcome === false ? "translateX(2px)" : "translateX(18px)" }}
+            />
+          </button>
+        </div>
+
         {/* CTA customizável */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium">Texto do botão CTA</label>

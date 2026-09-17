@@ -319,7 +319,8 @@ function ConsentScreen({
 }
 
 export function FormPlayer({ formId, title, fields, settings, preview = false }: Props) {
-  const [state, setState] = useState<PlayerState>("intro");
+  const skipWelcome = settings.showWelcome === false;
+  const [state, setState] = useState<PlayerState>(skipWelcome ? "playing" : "intro");
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -328,7 +329,7 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
   const [disqualifyData, setDisqualifyData] = useState<{ message?: string; url?: string } | null>(null);
   const sid = useRef(sessionId());
   const abandoned = useRef(false);
-  const startedAt = useRef<number | null>(null);   // when user began answering
+  const startedAt = useRef<number | null>(skipWelcome ? Date.now() : null);
   const honeypot  = useRef<HTMLInputElement>(null); // hidden bait field
 
   const field = fields[current];

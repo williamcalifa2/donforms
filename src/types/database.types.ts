@@ -104,6 +104,8 @@ export interface FormSettings {
   ctaText?: string | null;
   /** Cor do botão CTA (se null, usa primaryColor) */
   ctaColor?: string | null;
+  /** Exibir tela de boas-vindas antes do primeiro campo (padrão: true) */
+  showWelcome?: boolean;
 }
 
 export type WorkspaceRole = "admin" | "member" | "viewer";
