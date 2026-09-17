@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { FormSettings } from "@/types/database.types";
 
 export async function PATCH(
@@ -42,7 +43,10 @@ export async function PATCH(
   // Merge patch into existing settings
   const newSettings: FormSettings = { ...form.settings, ...body.settingsPatch };
 
-  const { error } = await client
+  // Use admin client to bypass RLS — membership already verified above
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = createAdminClient() as any;
+  const { error } = await admin
     .from("forms")
     .update({ settings: newSettings, updated_at: new Date().toISOString() })
     .eq("id", formId);

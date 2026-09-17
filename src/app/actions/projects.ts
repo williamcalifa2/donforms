@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import type { FormField, FormSettings } from "@/types/database.types";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://donforms.dondigital.com.br";
@@ -55,13 +56,14 @@ export async function renameProject(projectId: string, name: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
+  const { ownerId } = await resolveWorkspaceContext(user.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
   const { error } = await admin
     .from("projects")
     .update({ name: name.trim() || "Sem nome" })
     .eq("id", projectId)
-    .eq("user_id", user.id);
+    .eq("user_id", ownerId);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/projects");
@@ -104,9 +106,10 @@ export async function deleteProject(projectId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado" };
 
+  const { ownerId } = await resolveWorkspaceContext(user.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
-  await admin.from("projects").delete().eq("id", projectId).eq("user_id", user.id);
+  await admin.from("projects").delete().eq("id", projectId).eq("user_id", ownerId);
 
   revalidatePath("/dashboard/projects");
   return { error: null };
@@ -128,6 +131,7 @@ export async function inviteProjectClient(_prev: unknown, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Não autenticado", token: null };
 
+  const { ownerId } = await resolveWorkspaceContext(user.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
 
@@ -135,7 +139,7 @@ export async function inviteProjectClient(_prev: unknown, formData: FormData) {
     .from("projects")
     .select("id, name, logo_url")
     .eq("id", projectId)
-    .eq("user_id", user.id)
+    .eq("user_id", ownerId)
     .single();
 
   if (!project) return { error: "Projeto não encontrado", token: null };
@@ -216,6 +220,7 @@ export async function createProjectForm(projectId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { ownerId } = await resolveWorkspaceContext(user.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
 
@@ -224,7 +229,7 @@ export async function createProjectForm(projectId: string) {
   const { data: form, error } = await admin
     .from("forms")
     .insert({
-      user_id: user.id,
+      user_id: ownerId,
       project_id: projectId,
       title: "Novo Formulário",
       slug: slug ?? `form-${Date.now()}`,

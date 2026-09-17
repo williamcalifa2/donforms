@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveWorkspaceContext } from "@/lib/workspace/getWorkspaceOwner";
 import { isMqlByField } from "@/lib/score";
 import type { Form, Submission } from "@/types/database.types";
 import type { Metadata } from "next";
@@ -14,28 +15,15 @@ export default async function PipelinePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { ownerId } = await resolveWorkspaceContext(user.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = supabase as any;
-
-  // Determine active workspace
-  const cookieStore = await cookies();
-  const wid = cookieStore.get("_df_wid")?.value;
-  let activeWorkspaceId = user.id;
-  if (wid && wid !== user.id) {
-    const { data: membership } = await client
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("workspace_id", wid)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (membership) activeWorkspaceId = wid;
-  }
+  const admin = createAdminClient() as any;
 
   // Fetch forms
-  const { data: formsData } = await client
+  const { data: formsData } = await admin
     .from("forms")
     .select("id, title, settings, fields")
-    .eq("user_id", activeWorkspaceId) as { data: Form[] | null };
+    .eq("user_id", ownerId) as { data: Form[] | null };
 
   const forms = formsData ?? [];
   const formIds = forms.map(f => f.id);
@@ -45,7 +33,7 @@ export default async function PipelinePage() {
   if (formIds.length > 0) {
     const since = new Date();
     since.setDate(since.getDate() - 90);
-    const { data: subsData } = await client
+    const { data: subsData } = await admin
       .from("submissions")
       .select("*")
       .in("form_id", formIds)

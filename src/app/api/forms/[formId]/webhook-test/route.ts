@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Form } from "@/types/database.types";
 
 export async function POST(
@@ -12,9 +13,12 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = supabase as any;
+  const userClient = supabase as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = createAdminClient() as any;
 
-  const { data: form, error: formError } = await client
+  // Use admin client so members can read forms owned by workspace owner
+  const { data: form, error: formError } = await admin
     .from("forms")
     .select("id, title, settings, fields, user_id")
     .eq("id", formId)
@@ -25,7 +29,7 @@ export async function POST(
   // Verify ownership / membership
   const isOwner = form.user_id === user.id;
   if (!isOwner) {
-    const { data: membership } = await client
+    const { data: membership } = await userClient
       .from("workspace_members")
       .select("role")
       .eq("workspace_id", form.user_id)
@@ -34,7 +38,7 @@ export async function POST(
     if (!membership) return NextResponse.json({ error: "Sem acesso." }, { status: 403 });
   }
 
-  const { webhookUrl } = req.body ? await req.json().catch(() => ({})) as { webhookUrl?: string } : {};
+  const { webhookUrl } = await req.json().catch(() => ({}) as { webhookUrl?: string });
   const targetUrl = webhookUrl ?? form.settings.webhookUrl;
   if (!targetUrl) return NextResponse.json({ error: "Nenhuma URL de webhook configurada." }, { status: 400 });
 
@@ -93,7 +97,7 @@ export async function POST(
   const durationMs = Date.now() - t0;
 
   // Log the test
-  await client.from("webhook_logs").insert({
+  await admin.from("webhook_logs").insert({
     form_id: formId,
     url: targetUrl,
     status_code: statusCode,
