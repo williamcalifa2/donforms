@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { extractUtms } from "@/lib/utils";
 import { interpolateVariables } from "@/lib/piping";
+import { isMqlByField } from "@/lib/score";
 import { QuestionSlide } from "./QuestionSlide";
 import type { FormField, FormSettings } from "@/types/database.types";
 
@@ -454,8 +455,11 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
           }),
         });
         if (!res.ok) throw new Error((await res.json()).error ?? "Erro");
-        if (metaPixelId && (window as unknown as Record<string, unknown>).fbq)
-          (window as unknown as { fbq: (...a: unknown[]) => void }).fbq("track", "Lead");
+        if (metaPixelId && (window as unknown as Record<string, unknown>).fbq) {
+          const fbq = (window as unknown as { fbq: (...a: unknown[]) => void }).fbq;
+          fbq("track", "Lead");
+          if (isMqlByField(answers, fields)) fbq("trackCustom", "MQL");
+        }
         if (googleTagId && (window as unknown as Record<string, unknown>).gtag)
           (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "form_submit", { form_id: formId });
         fetch(`/api/forms/${formId}/event`, {
@@ -496,8 +500,11 @@ export function FormPlayer({ formId, title, fields, settings, preview = false }:
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Erro");
-      if (metaPixelId && (window as unknown as Record<string, unknown>).fbq)
-        (window as unknown as { fbq: (...a: unknown[]) => void }).fbq("track", "Lead");
+      if (metaPixelId && (window as unknown as Record<string, unknown>).fbq) {
+        const fbq = (window as unknown as { fbq: (...a: unknown[]) => void }).fbq;
+        fbq("track", "Lead");
+        if (isMqlByField(answers, fields)) fbq("trackCustom", "MQL");
+      }
       if (googleTagId && (window as unknown as Record<string, unknown>).gtag)
         (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "form_submit", { form_id: formId });
       fetch(`/api/forms/${formId}/event`, {
