@@ -54,6 +54,66 @@ function genToken() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
+function IconTrash({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+      <path d="M10 11v6M14 11v6"/>
+      <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+    </svg>
+  );
+}
+
+function IconEye({ crossed, size = 13 }: { crossed?: boolean; size?: number }) {
+  return crossed ? (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  ) : (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+// ─── Token strip ──────────────────────────────────────────────────────────────
+function TokenStrip({ token, onRefresh }: { token: string; onRefresh: () => void }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingLeft: 2 }}>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>código de acesso</span>
+      <code style={{
+        fontSize: 12, fontFamily: "'SF Mono','Fira Code',monospace",
+        letterSpacing: visible ? "0.12em" : "0.06em",
+        color: visible ? "rgba(99,102,241,0.65)" : "rgba(255,255,255,0.15)",
+        fontWeight: 600, minWidth: 52, display: "inline-block",
+      }}>
+        {visible ? token : "••••••"}
+      </code>
+      <button type="button" onClick={() => setVisible(v => !v)} title={visible ? "Esconder" : "Revelar código"}
+        style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.22)", padding: "2px 3px", lineHeight: 1, transition: "color 0.1s", display: "flex" }}
+        onMouseEnter={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.6)"; }}
+        onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.22)"; }}
+      >
+        <IconEye crossed={visible} />
+      </button>
+      {visible && (
+        <button type="button" onClick={onRefresh} title="Gerar novo código"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.2)", fontSize: 13, lineHeight: 1, padding: "2px 4px", transition: "color 0.1s" }}
+          onMouseEnter={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.55)"; }}
+          onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.2)"; }}
+        >↻</button>
+      )}
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.12)", marginLeft: "auto" }}>entra pelo /acesso</span>
+    </div>
+  );
+}
+
 // ─── Tiny avatar ──────────────────────────────────────────────────────────────
 function Av({ name, url, size = 28 }: { name: string; url: string | null; size?: number }) {
   const initials = (name || "?").split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
@@ -392,32 +452,7 @@ export function TeamSettings({
             </div>
 
             {/* Token strip */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              marginTop: 8, paddingLeft: 2,
-            }}>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>código</span>
-              <code style={{
-                fontSize: 12, fontFamily: "'SF Mono','Fira Code',monospace",
-                letterSpacing: "0.12em", color: "rgba(99,102,241,0.65)",
-                fontWeight: 600,
-              }}>{token}</code>
-              <button
-                type="button"
-                onClick={refreshToken}
-                title="Gerar novo código"
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  color: "rgba(255,255,255,0.2)", fontSize: 13, lineHeight: 1,
-                  padding: "2px 4px", transition: "color 0.1s",
-                }}
-                onMouseEnter={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.55)"; }}
-                onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.2)"; }}
-              >↻</button>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>
-                entra pelo /acesso
-              </span>
-            </div>
+            <TokenStrip token={token} onRefresh={refreshToken} />
           </form>
 
           {/* Error */}
@@ -525,15 +560,16 @@ export function TeamSettings({
                   {canEdit && (
                     <button
                       onClick={() => removeMember(m.user_id)}
-                      title="Remover"
+                      title="Remover membro"
                       style={{
                         background: "none", border: "none", cursor: "pointer",
-                        color: "rgba(255,255,255,0.15)", fontSize: 16, lineHeight: 1,
-                        padding: "2px 4px", transition: "color 0.1s",
+                        color: "rgba(255,255,255,0.15)", lineHeight: 1,
+                        padding: "4px", transition: "color 0.1s", display: "flex",
+                        borderRadius: 5,
                       }}
                       onMouseEnter={e => { (e.currentTarget).style.color = "#f87171"; }}
                       onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.15)"; }}
-                    >×</button>
+                    ><IconTrash /></button>
                   )}
                 </div>
               </div>
@@ -578,15 +614,16 @@ export function TeamSettings({
                 </span>
                 <button
                   onClick={() => revokeInvite(inv.id)}
-                  title="Cancelar"
+                  title="Cancelar convite"
                   style={{
                     background: "none", border: "none", cursor: "pointer",
-                    color: "rgba(255,255,255,0.15)", fontSize: 16, lineHeight: 1,
-                    padding: "2px 4px", transition: "color 0.1s",
+                    color: "rgba(255,255,255,0.15)", lineHeight: 1,
+                    padding: "4px", transition: "color 0.1s", display: "flex",
+                    borderRadius: 5,
                   }}
                   onMouseEnter={e => { (e.currentTarget).style.color = "#f87171"; }}
                   onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.15)"; }}
-                >×</button>
+                ><IconTrash /></button>
               </div>
             </div>
           ))}
