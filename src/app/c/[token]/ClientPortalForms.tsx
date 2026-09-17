@@ -2,9 +2,11 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
+import type React from "react";
 import {
   SquaresFour, List, DotsThreeVertical, Trash,
   Eye, EyeSlash, PencilSimple, Link as PhLink,
+  ChatCircle, ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { deleteFormAsClient, togglePublishAsClient } from "@/app/actions/projects";
 
@@ -214,6 +216,33 @@ function PortalFormCard({ form, token, appUrl }: { form: Form; token: string; ap
           Editar
         </Link>
 
+        {/* Icon actions */}
+        {(
+          [
+            { href: `/c/${token}/forms/${form.id}/analytics`, icon: <ChatCircle size={14} weight="duotone" />, title: "Respostas & Analytics" },
+            ...(published ? [{ href: `/f/${form.slug}`, icon: <ArrowSquareOut size={14} weight="duotone" />, title: "Abrir formulário", target: "_blank" }] : []),
+          ] as { href: string; icon: React.ReactNode; title: string; target?: string }[]
+        ).map(({ href, icon, title, target }) => (
+          <Link
+            key={title}
+            href={href}
+            target={target}
+            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: "var(--text-secondary)" }}
+            title={title}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
+              (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+              (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-secondary)";
+            }}
+          >
+            {icon}
+          </Link>
+        ))}
+
         {/* More menu */}
         <div className="relative" ref={menuRef}>
           <button onClick={() => setMenuOpen(v => !v)}
@@ -299,6 +328,14 @@ function PortalFormRow({ form, token }: { form: Form; token: string }) {
           className="h-7 px-2.5 flex items-center rounded-lg text-[11px] font-semibold transition-all"
           style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}>
           Editar
+        </Link>
+        <Link href={`/c/${token}/forms/${form.id}/analytics`}
+          className="h-7 w-7 flex items-center justify-center rounded-lg transition-colors"
+          style={{ color: "var(--text-secondary)" }}
+          title="Respostas & Analytics"
+          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-secondary)"; }}>
+          <ChatCircle size={13} weight="duotone" />
         </Link>
         <button onClick={handleDelete} disabled={isPending}
           className="h-7 w-7 flex items-center justify-center rounded-lg transition-colors"
