@@ -224,6 +224,12 @@ export async function createProjectForm(projectId: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
 
+  const { data: project } = await admin
+    .from("projects")
+    .select("logo_url")
+    .eq("id", projectId)
+    .single();
+
   const { data: slug } = await admin.rpc("generate_slug", { title: "Novo Formulário" });
 
   const { data: form, error } = await admin
@@ -233,7 +239,7 @@ export async function createProjectForm(projectId: string) {
       project_id: projectId,
       title: "Novo Formulário",
       slug: slug ?? `form-${Date.now()}`,
-      settings: DEFAULT_FORM_SETTINGS,
+      settings: { ...DEFAULT_FORM_SETTINGS, logoUrl: project?.logo_url ?? null },
     })
     .select("id")
     .single();
@@ -261,7 +267,7 @@ export async function createProjectFormAsClient(token: string) {
 
   const { data: project } = await admin
     .from("projects")
-    .select("id, user_id")
+    .select("id, user_id, logo_url")
     .eq("id", clientRow.project_id)
     .single();
 
@@ -276,7 +282,7 @@ export async function createProjectFormAsClient(token: string) {
       project_id: project.id,
       title: "Novo Formulário",
       slug: slug ?? `form-${Date.now()}`,
-      settings: DEFAULT_FORM_SETTINGS,
+      settings: { ...DEFAULT_FORM_SETTINGS, logoUrl: project?.logo_url ?? null },
     })
     .select("id")
     .single();

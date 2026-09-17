@@ -197,14 +197,15 @@ type FakeRequest = { body: null; json: () => Promise<{ webhookUrl?: string }> };
 
 async function oldWebhookBodyParsing(req: FakeRequest) {
   // OLD: req.body check always false → never reads json
-  const { webhookUrl } = req.body ? await req.json().catch(() => ({})) : ({} as { webhookUrl?: string });
+  const result: { webhookUrl?: string } = req.body ? await req.json().catch(() => ({})) : {};
+  const { webhookUrl } = result;
   return webhookUrl;
 }
 
 async function newWebhookBodyParsing(req: FakeRequest) {
   // NEW: always call req.json()
-  const { webhookUrl } = await req.json().catch(() => ({} as { webhookUrl?: string }));
-  return webhookUrl;
+  const body = await req.json().catch(() => ({} as { webhookUrl?: string }));
+  return (body as { webhookUrl?: string }).webhookUrl;
 }
 
 describe("webhook-test route body parsing", () => {
