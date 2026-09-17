@@ -23,7 +23,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   if (!user) redirect("/login");
 
   // Resolve active workspace (verifies membership, returns effective owner id)
-  const { ownerId } = await resolveWorkspaceContext(user.id);
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
 
   // Use admin client to bypass RLS — forms belong to workspace owner, not the visiting member
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +68,7 @@ export default async function DashboardPage({ searchParams }: Props) {
               : `${list.length} formulário${list.length > 1 ? "s" : ""} no workspace`}
           </p>
         </div>
-        <NewFormButton />
+        {permissions.forms_create && <NewFormButton />}
       </div>
 
       {/* Empty state */}
@@ -91,15 +91,15 @@ export default async function DashboardPage({ searchParams }: Props) {
               Nenhum formulário aqui ainda
             </p>
             <p className="text-xs max-w-xs" style={{ color: "var(--text-tertiary)" }}>
-              Arraste campos, configure e publique. Menos de 5 minutos.
+              {permissions.forms_create ? "Arraste campos, configure e publique. Menos de 5 minutos." : "O workspace ainda não tem formulários."}
             </p>
           </div>
-          <NewFormButton />
+          {permissions.forms_create && <NewFormButton />}
         </div>
       )}
 
       {/* Forms */}
-      {list.length > 0 && <FormsView forms={list} appUrl={APP_URL} projectNames={projectNames} />}
+      {list.length > 0 && <FormsView forms={list} appUrl={APP_URL} projectNames={projectNames} readonly={!permissions.forms_edit} />}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default async function ProjectDetailPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { ownerId } = await resolveWorkspaceContext(user.id);
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
@@ -81,7 +81,7 @@ export default async function ProjectDetailPage({ params }: Props) {
           <h2 className="text-sm font-semibold">Formulários</h2>
           <div className="flex items-center gap-2">
             <ProjectSettingsButton projectId={id} projectName={project.name} projectLogoUrl={project.logo_url} clients={clientList} appUrl={APP_URL} />
-            <NewFormButton projectId={id} />
+            {permissions.forms_create && <NewFormButton projectId={id} />}
           </div>
         </div>
 
@@ -91,7 +91,7 @@ export default async function ProjectDetailPage({ params }: Props) {
             <p className="text-xs">Crie o primeiro formulário para este projeto.</p>
           </div>
         ) : (
-          <FormsView forms={formList} appUrl={APP_URL} />
+          <FormsView forms={formList} appUrl={APP_URL} readonly={!permissions.forms_edit} />
         )}
       </div>
 

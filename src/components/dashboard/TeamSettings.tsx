@@ -26,7 +26,7 @@ interface Props {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  owner: "Owner", admin: "Admin", member: "Membro", viewer: "Viewer",
+  owner: "Owner", admin: "Admin", member: "Membro", viewer: "Leitor",
 };
 
 // Accent colors per role — used only for the dot and badge text
@@ -372,7 +372,7 @@ export function TeamSettings({
                   flexShrink: 0,
                 }}
               >
-                <option value="viewer">Viewer</option>
+                <option value="viewer">Leitor</option>
                 <option value="member">Membro</option>
                 {isOwner && <option value="admin">Admin</option>}
               </select>
@@ -599,7 +599,7 @@ export function TeamSettings({
           ["owner",  "Owner",  "acesso total"],
           ["admin",  "Admin",  "tudo + equipe"],
           ["member", "Membro", "cria, edita, publica"],
-          ["viewer", "Viewer", "só lê"],
+          ["viewer", "Leitor", "só lê"],
         ].map(([k, label, desc]) => (
           <span key={k} style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
             <span style={{ color: ROLE_HUE[k], fontWeight: 600 }}>{label}</span> {desc}

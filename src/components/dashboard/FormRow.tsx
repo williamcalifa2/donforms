@@ -13,9 +13,10 @@ import {
 interface Props {
   form: FormWithCount;
   appUrl: string;
+  readonly?: boolean;
 }
 
-export function FormRow({ form, appUrl }: Props) {
+export function FormRow({ form, appUrl, readonly }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -101,10 +102,10 @@ export function FormRow({ form, appUrl }: Props) {
         ) : (
           <div className="flex items-center gap-1.5">
             <span
-              className="text-[14px] font-medium truncate cursor-text"
+              className={`text-[14px] font-medium truncate ${readonly ? "" : "cursor-text"}`}
               style={{ color: "var(--text-primary)" }}
-              onClick={() => { setEditing(true); setTimeout(() => titleInputRef.current?.select(), 0); }}
-              title="Clique para renomear"
+              onClick={readonly ? undefined : () => { setEditing(true); setTimeout(() => titleInputRef.current?.select(), 0); }}
+              title={readonly ? undefined : "Clique para renomear"}
             >
               {titleValue}
             </span>
@@ -123,16 +124,18 @@ export function FormRow({ form, appUrl }: Props) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <Link
-          href={`/dashboard/forms/${form.id}/edit`}
-          className="p-1.5 rounded-lg transition-colors"
-          style={{ color: "var(--text-secondary)" }}
-          title="Editar"
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
-        >
-          <PencilSimple size={14} weight="duotone" />
-        </Link>
+        {!readonly && (
+          <Link
+            href={`/dashboard/forms/${form.id}/edit`}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: "var(--text-secondary)" }}
+            title="Editar"
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+          >
+            <PencilSimple size={14} weight="duotone" />
+          </Link>
+        )}
         <Link
           href={`/dashboard/forms/${form.id}/responses`}
           className="p-1.5 rounded-lg transition-colors"
@@ -155,7 +158,7 @@ export function FormRow({ form, appUrl }: Props) {
         </Link>
 
         {/* Menu */}
-        <div className="relative" ref={menuRef}>
+        {!readonly && <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(v => !v)}
             className="p-1.5 rounded-lg transition-colors"
@@ -199,7 +202,7 @@ export function FormRow({ form, appUrl }: Props) {
               </button>
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

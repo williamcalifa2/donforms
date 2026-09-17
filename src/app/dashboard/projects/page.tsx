@@ -14,7 +14,7 @@ export default async function ProjectsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { ownerId } = await resolveWorkspaceContext(user.id);
+  const { ownerId, permissions } = await resolveWorkspaceContext(user.id);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as any;
@@ -48,7 +48,7 @@ export default async function ProjectsPage() {
               : `${enriched.length} projeto${enriched.length > 1 ? "s" : ""} no workspace`}
           </p>
         </div>
-        <ProjectsPageClient />
+        {permissions.forms_create && <ProjectsPageClient />}
       </div>
 
       {enriched.length === 0 ? (
@@ -72,10 +72,10 @@ export default async function ProjectsPage() {
               Crie um projeto para organizar formulários por cliente e compartilhar acesso.
             </p>
           </div>
-          <ProjectsPageClient />
+          {permissions.forms_create && <ProjectsPageClient />}
         </div>
       ) : (
-        <ProjectsView projects={enriched} />
+        <ProjectsView projects={enriched} readonly={!permissions.forms_edit} />
       )}
     </div>
   );

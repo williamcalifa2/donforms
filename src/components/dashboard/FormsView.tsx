@@ -12,9 +12,10 @@ interface Props {
   forms: FormWithCount[];
   appUrl: string;
   projectNames?: Record<string, string>;
+  readonly?: boolean;
 }
 
-export function FormsView({ forms, appUrl, projectNames }: Props) {
+export function FormsView({ forms, appUrl, projectNames, readonly }: Props) {
   const [view, setView] = useState<"card" | "list">("card");
 
   useEffect(() => {
@@ -38,11 +39,11 @@ export function FormsView({ forms, appUrl, projectNames }: Props) {
 
       {view === "card" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {forms.map(f => <FormCard key={f.id} form={f} appUrl={appUrl} projectName={f.project_id ? projectNames?.[f.project_id] : undefined} />)}
+          {forms.map(f => <FormCard key={f.id} form={f} appUrl={appUrl} projectName={f.project_id ? projectNames?.[f.project_id] : undefined} readonly={readonly} />)}
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {forms.map(f => <FormRow key={f.id} form={f} appUrl={appUrl} />)}
+          {forms.map(f => <FormRow key={f.id} form={f} appUrl={appUrl} readonly={readonly} />)}
         </div>
       )}
     </div>

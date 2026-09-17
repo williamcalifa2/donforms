@@ -17,9 +17,10 @@ interface Project {
 
 interface Props {
   projects: Project[];
+  readonly?: boolean;
 }
 
-export function ProjectsView({ projects }: Props) {
+export function ProjectsView({ projects, readonly }: Props) {
   const [view, setView] = useState<"card" | "list">("card");
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function ProjectsView({ projects }: Props) {
 
       {view === "card" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map(p => <ProjectCard key={p.id} project={p} />)}
+          {projects.map(p => <ProjectCard key={p.id} project={p} readonly={readonly} />)}
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">

@@ -16,7 +16,7 @@ interface Project {
   clientCount: number;
 }
 
-export function ProjectCard({ project }: { project: Project }) {
+export function ProjectCard({ project, readonly }: { project: Project; readonly?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -117,7 +117,7 @@ export function ProjectCard({ project }: { project: Project }) {
         <div className="flex items-start justify-between mb-3">
           {/* Folder logo / icon */}
           <div
-            className="flex items-center justify-center rounded-xl transition-all cursor-pointer relative overflow-hidden"
+            className="flex items-center justify-center rounded-xl transition-all relative overflow-hidden"
             style={{
               width: 44,
               height: 44,
@@ -125,9 +125,10 @@ export function ProjectCard({ project }: { project: Project }) {
               border: "1px solid rgba(245,158,11,0.20)",
               color: "#f59e0b",
               flexShrink: 0,
+              cursor: readonly ? "default" : "pointer",
             }}
-            onClick={() => { setMenuOpen(false); fileRef.current?.click(); }}
-            title="Alterar logo"
+            onClick={readonly ? undefined : () => { setMenuOpen(false); fileRef.current?.click(); }}
+            title={readonly ? undefined : "Alterar logo"}
           >
             {logoPreview
               ? <img src={logoPreview} alt="" className="w-full h-full object-cover" />
@@ -141,7 +142,7 @@ export function ProjectCard({ project }: { project: Project }) {
           </div>
 
           {/* More menu */}
-          <div className="relative" ref={menuRef}>
+          {!readonly && <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(v => !v)}
               className="h-7 w-7 flex items-center justify-center rounded-lg transition-colors"
@@ -197,7 +198,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 </button>
               </div>
             )}
-          </div>
+          </div>}
         </div>
 
         {/* Project name */}
@@ -219,13 +220,13 @@ export function ProjectCard({ project }: { project: Project }) {
           />
         ) : (
           <h2
-            className="text-[14px] font-semibold mb-0.5 truncate cursor-text group/title flex items-center gap-1"
+            className={`text-[14px] font-semibold mb-0.5 truncate ${readonly ? "" : "cursor-text group/title"} flex items-center gap-1`}
             style={{ color: "var(--text-primary)", letterSpacing: "-0.01em", lineHeight: "1.35" }}
-            onClick={() => { setEditing(true); setTimeout(() => nameInputRef.current?.select(), 0); }}
-            title="Clique para renomear"
+            onClick={readonly ? undefined : () => { setEditing(true); setTimeout(() => nameInputRef.current?.select(), 0); }}
+            title={readonly ? undefined : "Clique para renomear"}
           >
             <span className="flex-1 truncate">{nameValue}</span>
-            <PencilSimple size={10} weight="duotone" className="opacity-0 group-hover/title:opacity-25 transition-opacity shrink-0" />
+            {!readonly && <PencilSimple size={10} weight="duotone" className="opacity-0 group-hover/title:opacity-25 transition-opacity shrink-0" />}
           </h2>
         )}
 

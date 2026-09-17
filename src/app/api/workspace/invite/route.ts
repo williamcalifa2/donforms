@@ -149,7 +149,6 @@ export async function POST(req: NextRequest) {
                 3. Pronto — você estará no workspace
               </p>
             </div>
-            ${magicLinkUrl !== accessUrl ? `<a href="${magicLinkUrl}" style="display:inline-block;background:linear-gradient(135deg,#9ea8ff,#7c87ff);color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:16px;">Ou clique aqui para entrar direto →</a>` : ""}
             <p style="margin:16px 0 0;font-size:12px;color:#3d4060;line-height:1.6;">Token permanente — guarde-o com segurança.</p>
           </div>
         `,

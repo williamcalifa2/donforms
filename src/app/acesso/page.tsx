@@ -84,36 +84,39 @@ async function acessarComToken(formData: FormData) {
   // Pegar o usuário recém autenticado
   const { data: { user: newUser } } = await supabase.auth.getUser();
 
-  if (newUser) {
-    // Aceitar o convite se ainda não foi aceito
-    if (!inv.accepted_at) {
-      await admin
-        .from("workspace_invitations")
-        .update({ accepted_at: new Date().toISOString() })
-        .eq("token", token);
-
-      await admin
-        .from("workspace_members")
-        .upsert(
-          {
-            workspace_id: inv.workspace_id,
-            user_id: newUser.id,
-            role: inv.role ?? "member",
-            joined_at: new Date().toISOString(),
-          },
-          { onConflict: "workspace_id,user_id" }
-        );
-    }
-
-    // Setar cookie _df_wid no Server Action (permitido!)
-    const cookieStore = await cookies();
-    cookieStore.set("_df_wid", inv.workspace_id, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 90,
-    });
+  if (!newUser) {
+    redirect("/acesso?erro=erro_interno");
   }
+
+  // Always upsert membership — idempotent, safe for re-logins
+  await admin
+    .from("workspace_members")
+    .upsert(
+      {
+        workspace_id: inv.workspace_id,
+        user_id: newUser.id,
+        role: inv.role ?? "member",
+        joined_at: new Date().toISOString(),
+      },
+      { onConflict: "workspace_id,user_id" }
+    );
+
+  // Mark invitation accepted only on first use
+  if (!inv.accepted_at) {
+    await admin
+      .from("workspace_invitations")
+      .update({ accepted_at: new Date().toISOString() })
+      .eq("token", token);
+  }
+
+  // Setar cookie _df_wid no Server Action (permitido!)
+  const cookieStore = await cookies();
+  cookieStore.set("_df_wid", inv.workspace_id, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 90,
+  });
 
   redirect("/dashboard?welcome=1");
 }

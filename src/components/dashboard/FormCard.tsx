@@ -15,9 +15,10 @@ interface Props {
   form: FormWithCount;
   appUrl: string;
   projectName?: string;
+  readonly?: boolean;
 }
 
-export function FormCard({ form, appUrl, projectName }: Props) {
+export function FormCard({ form, appUrl, projectName, readonly }: Props) {
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -138,13 +139,13 @@ export function FormCard({ form, appUrl, projectName }: Props) {
         />
       ) : (
         <h2
-          className="font-semibold text-[15px] mb-1 line-clamp-2 flex-1 cursor-text group/title flex items-start gap-1"
+          className={`font-semibold text-[15px] mb-1 line-clamp-2 flex-1 ${readonly ? "" : "cursor-text group/title"} flex items-start gap-1`}
           style={{ color: "var(--text-primary)", letterSpacing: "-0.01em", lineHeight: "1.35" }}
-          onClick={() => { setEditing(true); setTimeout(() => titleInputRef.current?.select(), 0); }}
-          title="Clique para renomear"
+          onClick={readonly ? undefined : () => { setEditing(true); setTimeout(() => titleInputRef.current?.select(), 0); }}
+          title={readonly ? undefined : "Clique para renomear"}
         >
           <span className="flex-1">{titleValue}</span>
-          <PencilSimple size={11} weight="duotone" className="opacity-0 group-hover/title:opacity-30 transition-opacity shrink-0 mt-0.5" />
+          {!readonly && <PencilSimple size={11} weight="duotone" className="opacity-0 group-hover/title:opacity-30 transition-opacity shrink-0 mt-0.5" />}
         </h2>
       )}
       <p className="text-[11px] mb-4" style={{ color: "var(--text-tertiary)" }}>
@@ -184,21 +185,23 @@ export function FormCard({ form, appUrl, projectName }: Props) {
 
       {/* Actions */}
       <div className="flex items-center gap-1">
-        <Link
-          href={`/dashboard/forms/${form.id}/edit`}
-          className="flex-1 flex items-center justify-center h-8 rounded-lg text-[12px] font-semibold transition-all duration-150"
-          style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLAnchorElement).style.background = "var(--accent-glow)";
-            (e.currentTarget as HTMLAnchorElement).style.boxShadow = "var(--shadow-accent)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLAnchorElement).style.background = "var(--accent-soft)";
-            (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
-          }}
-        >
-          Editar
-        </Link>
+        {!readonly && (
+          <Link
+            href={`/dashboard/forms/${form.id}/edit`}
+            className="flex-1 flex items-center justify-center h-8 rounded-lg text-[12px] font-semibold transition-all duration-150"
+            style={{ background: "var(--accent-soft)", color: "var(--accent-c)" }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "var(--accent-glow)";
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = "var(--shadow-accent)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLAnchorElement).style.background = "var(--accent-soft)";
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
+            }}
+          >
+            Editar
+          </Link>
+        )}
 
         {(
           [
@@ -228,7 +231,7 @@ export function FormCard({ form, appUrl, projectName }: Props) {
         ))}
 
         {/* More menu */}
-        <div className="relative" ref={menuRef}>
+        {!readonly && <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(v => !v)}
             className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
@@ -291,7 +294,7 @@ export function FormCard({ form, appUrl, projectName }: Props) {
               </button>
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );
