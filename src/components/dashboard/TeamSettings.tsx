@@ -29,7 +29,6 @@ const ROLE_LABELS: Record<string, string> = {
   owner: "Owner", admin: "Admin", member: "Membro", viewer: "Leitor",
 };
 
-// Accent colors per role — used only for the dot and badge text
 const ROLE_HUE: Record<string, string> = {
   owner: "#f59e0b", admin: "#a78bfa", member: "#818cf8", viewer: "#64748b",
 };
@@ -66,51 +65,12 @@ function IconTrash({ size = 14 }: { size?: number }) {
   );
 }
 
-function IconEye({ crossed, size = 13 }: { crossed?: boolean; size?: number }) {
-  return crossed ? (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-      <line x1="1" y1="1" x2="23" y2="23"/>
-    </svg>
-  ) : (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  );
-}
-
-// ─── Token strip ──────────────────────────────────────────────────────────────
-function TokenStrip({ token, onRefresh }: { token: string; onRefresh: () => void }) {
-  const [visible, setVisible] = useState(false);
+function IconGear({ size = 14 }: { size?: number }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingLeft: 2 }}>
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>código de acesso</span>
-      <code style={{
-        fontSize: 12, fontFamily: "'SF Mono','Fira Code',monospace",
-        letterSpacing: visible ? "0.12em" : "0.06em",
-        color: visible ? "rgba(99,102,241,0.65)" : "rgba(255,255,255,0.15)",
-        fontWeight: 600, minWidth: 52, display: "inline-block",
-      }}>
-        {visible ? token : "••••••"}
-      </code>
-      <button type="button" onClick={() => setVisible(v => !v)} title={visible ? "Esconder" : "Revelar código"}
-        style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.22)", padding: "2px 3px", lineHeight: 1, transition: "color 0.1s", display: "flex" }}
-        onMouseEnter={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.6)"; }}
-        onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.22)"; }}
-      >
-        <IconEye crossed={visible} />
-      </button>
-      {visible && (
-        <button type="button" onClick={onRefresh} title="Gerar novo código"
-          style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.2)", fontSize: 13, lineHeight: 1, padding: "2px 4px", transition: "color 0.1s" }}
-          onMouseEnter={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.55)"; }}
-          onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.2)"; }}
-        >↻</button>
-      )}
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.12)", marginLeft: "auto" }}>entra pelo /acesso</span>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </svg>
   );
 }
 
@@ -131,7 +91,7 @@ function Av({ name, url, size = 28 }: { name: string; url: string | null; size?:
   );
 }
 
-// ─── Permission drawer ────────────────────────────────────────────────────────
+// ─── Permission drawer (existing members) ─────────────────────────────────────
 function PermDrawer({
   member, canSetAdmin, onClose, onUpdated,
 }: {
@@ -177,112 +137,225 @@ function PermDrawer({
   }
 
   return (
+    <Drawer onClose={onClose}>
+      {/* Member info */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "4px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Av name={member.name || member.email} url={member.avatar_url} size={32} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.88)" }}>
+              {member.name || member.email.split("@")[0]}
+            </p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{member.email}</p>
+          </div>
+        </div>
+        <CloseBtn onClick={onClose} />
+      </div>
+
+      <div style={{ padding: "20px 20px 0" }}>
+        {/* Role tabs */}
+        <p style={LABEL_STYLE}>Nível</p>
+        <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
+          {(canSetAdmin ? ["viewer","member","admin"] : ["viewer","member"]).map(r => (
+            <button key={r} onClick={() => pickRole(r)} style={{
+              flex: 1, padding: "7px 0", borderRadius: 7, fontSize: 12, fontWeight: 500,
+              cursor: "pointer", transition: "all 0.1s", fontFamily: "inherit",
+              background: role === r ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.03)",
+              color: role === r ? "#818cf8" : "rgba(255,255,255,0.28)",
+              border: `1px solid ${role === r ? "rgba(99,102,241,0.25)" : "rgba(255,255,255,0.05)"}`,
+            }}>
+              {ROLE_LABELS[r]}
+            </button>
+          ))}
+        </div>
+
+        {/* Permissions */}
+        {PERM_GROUPS.map(g => (
+          <div key={g.label} style={{ marginBottom: 16 }}>
+            <p style={LABEL_STYLE}>{g.label}</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {g.perms.map(({ key, label }) => {
+                const on = perms[key];
+                return (
+                  <button key={key} onClick={() => toggle(key)} style={{
+                    padding: "5px 11px", borderRadius: 20, fontSize: 11, fontWeight: 500,
+                    cursor: "pointer", transition: "all 0.1s", fontFamily: "inherit",
+                    background: on ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.03)",
+                    color: on ? "#818cf8" : "rgba(255,255,255,0.25)",
+                    border: `1px solid ${on ? "rgba(99,102,241,0.22)" : "rgba(255,255,255,0.06)"}`,
+                  }}>
+                    {on ? "✓ " : ""}{label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {isCustom() && (
+          <p style={{ fontSize: 11, color: "rgba(251,191,36,0.5)", marginBottom: 14 }}>
+            Diferente do padrão do nível escolhido
+          </p>
+        )}
+        {err && <p style={{ fontSize: 11, color: "#fca5a5", marginBottom: 14 }}>{err}</p>}
+
+        <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+          <button onClick={onClose} style={{
+            flex: 1, padding: "9px 0", borderRadius: 8,
+            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+            color: "rgba(255,255,255,0.35)", fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+          }}>Cancelar</button>
+          <button onClick={save} disabled={saving} style={{
+            flex: 2, padding: "9px 0", borderRadius: 8,
+            background: saving ? "rgba(99,102,241,0.3)" : "rgba(99,102,241,0.15)",
+            border: "1px solid rgba(99,102,241,0.25)",
+            color: saving ? "rgba(129,140,248,0.5)" : "#818cf8",
+            fontSize: 12, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer",
+            fontFamily: "inherit", transition: "all 0.15s",
+          }}>
+            {saving ? "Salvando…" : "Salvar"}
+          </button>
+        </div>
+      </div>
+    </Drawer>
+  );
+}
+
+// ─── Invite detail drawer (pending invites) ───────────────────────────────────
+function InviteDrawer({ inv, onClose, onRevoke }: {
+  inv: WorkspaceInvitation; onClose: () => void; onRevoke: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const hasToken = !!inv.token;
+
+  async function copy() {
+    await navigator.clipboard.writeText(inv.token);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Drawer onClose={onClose}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "4px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+            border: "1px dashed rgba(255,255,255,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 13, color: "rgba(255,255,255,0.2)",
+          }}>?</div>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.88)" }}>{inv.email}</p>
+            <span style={{
+              fontSize: 10, fontWeight: 600, color: ROLE_HUE[inv.role] ?? ROLE_HUE.viewer,
+              background: "rgba(255,255,255,0.04)", borderRadius: 4, padding: "1px 6px",
+            }}>{ROLE_LABELS[inv.role]}</span>
+          </div>
+        </div>
+        <CloseBtn onClick={onClose} />
+      </div>
+
+      <div style={{ padding: "20px 20px 0" }}>
+        {/* Token */}
+        {hasToken && (
+          <div style={{ marginBottom: 20 }}>
+            <p style={LABEL_STYLE}>Código de acesso</p>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)",
+              borderRadius: 9, padding: "12px 14px",
+            }}>
+              <code style={{
+                fontSize: 22, fontFamily: "'SF Mono','Fira Code',monospace",
+                letterSpacing: "0.18em", fontWeight: 700, color: "rgba(129,140,248,0.85)",
+              }}>{inv.token}</code>
+              <button onClick={copy} style={{
+                padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
+                background: copied ? "rgba(52,211,153,0.1)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${copied ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.08)"}`,
+                color: copied ? "#34d399" : "rgba(255,255,255,0.4)",
+              }}>
+                {copied ? "✓" : "Copiar"}
+              </button>
+            </div>
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 6 }}>
+              Entra em <strong style={{ color: "rgba(255,255,255,0.3)" }}>/acesso</strong>
+            </p>
+          </div>
+        )}
+
+        {/* Info */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>Enviado em</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+              {new Date(inv.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+            </span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>Validade</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+              {inv.expires_at.startsWith("2099") ? "Permanente" : new Date(inv.expires_at).toLocaleDateString("pt-BR")}
+            </span>
+          </div>
+        </div>
+
+        <button onClick={onRevoke} style={{
+          width: "100%", padding: "9px 0", borderRadius: 8,
+          background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)",
+          color: "rgba(248,113,113,0.7)", fontSize: 12, fontWeight: 600,
+          cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+        }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(248,113,113,0.1)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(248,113,113,0.06)"; }}
+        >
+          <IconTrash size={13} /> Cancelar convite
+        </button>
+      </div>
+    </Drawer>
+  );
+}
+
+// ─── Shared drawer shell ──────────────────────────────────────────────────────
+function Drawer({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose(); }} style={{
       position: "fixed", inset: 0, zIndex: 50,
       display: "flex", alignItems: "flex-end", justifyContent: "center",
-      background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)", padding: "0 0 0 0",
+      background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)",
     }}>
       <div style={{
         width: "100%", maxWidth: 480,
         background: "#0a0a12", borderTop: "1px solid rgba(255,255,255,0.06)",
         borderRadius: "16px 16px 0 0",
-        maxHeight: "82vh", overflowY: "auto",
-        paddingBottom: 32,
+        maxHeight: "82vh", overflowY: "auto", paddingBottom: 32,
       }}>
-        {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "14px 0 10px" }}>
           <div style={{ width: 36, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.1)" }} />
         </div>
-
-        {/* Member info */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "4px 20px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.04)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Av name={member.name || member.email} url={member.avatar_url} size={32} />
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.88)" }}>
-                {member.name || member.email.split("@")[0]}
-              </p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{member.email}</p>
-            </div>
-          </div>
-          <button onClick={onClose} style={{
-            background: "none", border: "none", color: "rgba(255,255,255,0.25)",
-            fontSize: 20, cursor: "pointer", lineHeight: 1, padding: "4px 6px",
-          }}>×</button>
-        </div>
-
-        <div style={{ padding: "20px 20px 0" }}>
-          {/* Role tabs */}
-          <p style={LABEL_STYLE}>Nível</p>
-          <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-            {(canSetAdmin ? ["viewer","member","admin"] : ["viewer","member"]).map(r => (
-              <button key={r} onClick={() => pickRole(r)} style={{
-                flex: 1, padding: "7px 0", borderRadius: 7, fontSize: 12, fontWeight: 500,
-                cursor: "pointer", transition: "all 0.1s", fontFamily: "inherit",
-                background: role === r ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.03)",
-                color: role === r ? "#818cf8" : "rgba(255,255,255,0.28)",
-                border: `1px solid ${role === r ? "rgba(99,102,241,0.25)" : "rgba(255,255,255,0.05)"}`,
-              }}>
-                {ROLE_LABELS[r]}
-              </button>
-            ))}
-          </div>
-
-          {/* Permissions */}
-          {PERM_GROUPS.map(g => (
-            <div key={g.label} style={{ marginBottom: 16 }}>
-              <p style={LABEL_STYLE}>{g.label}</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {g.perms.map(({ key, label }) => {
-                  const on = perms[key];
-                  return (
-                    <button key={key} onClick={() => toggle(key)} style={{
-                      padding: "5px 11px", borderRadius: 20, fontSize: 11, fontWeight: 500,
-                      cursor: "pointer", transition: "all 0.1s", fontFamily: "inherit",
-                      background: on ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.03)",
-                      color: on ? "#818cf8" : "rgba(255,255,255,0.25)",
-                      border: `1px solid ${on ? "rgba(99,102,241,0.22)" : "rgba(255,255,255,0.06)"}`,
-                    }}>
-                      {on ? "✓ " : ""}{label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-
-          {isCustom() && (
-            <p style={{ fontSize: 11, color: "rgba(251,191,36,0.5)", marginBottom: 14 }}>
-              Diferente do padrão do nível escolhido
-            </p>
-          )}
-
-          {err && <p style={{ fontSize: 11, color: "#fca5a5", marginBottom: 14 }}>{err}</p>}
-
-          <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-            <button onClick={onClose} style={{
-              flex: 1, padding: "9px 0", borderRadius: 8,
-              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.35)", fontSize: 12, cursor: "pointer", fontFamily: "inherit",
-            }}>Cancelar</button>
-            <button onClick={save} disabled={saving} style={{
-              flex: 2, padding: "9px 0", borderRadius: 8,
-              background: saving ? "rgba(99,102,241,0.3)" : "rgba(99,102,241,0.15)",
-              border: "1px solid rgba(99,102,241,0.25)",
-              color: saving ? "rgba(129,140,248,0.5)" : "#818cf8",
-              fontSize: 12, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer",
-              fontFamily: "inherit", transition: "all 0.15s",
-            }}>
-              {saving ? "Salvando…" : "Salvar"}
-            </button>
-          </div>
-        </div>
+        {children}
       </div>
     </div>
+  );
+}
+
+function CloseBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{
+      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: 7, color: "rgba(255,255,255,0.3)", fontSize: 16,
+      cursor: "pointer", lineHeight: 1, padding: "5px 8px", transition: "all 0.1s",
+    }}
+      onMouseEnter={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.7)"; }}
+      onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.3)"; }}
+    >×</button>
   );
 }
 
@@ -301,21 +374,20 @@ export function TeamSettings({
   currentUserRole,
   ownerProfile,
 }: Props) {
-  const [memberList, setMemberList]       = useState(members);
-  const [invitations, setInvitations]     = useState(initialInvitations);
-  const [email, setEmail]                 = useState("");
-  const [inviteRole, setInviteRole]       = useState<"admin"|"member"|"viewer">("member");
-  const [token, setToken]                 = useState(genToken);
-  const [inviteError, setInviteError]     = useState<string | null>(null);
-  const [result, setResult]               = useState<{ token: string; emailSent: boolean; emailErr?: string } | null>(null);
-  const [copied, setCopied]               = useState(false);
-  const [isPending, startTransition]      = useTransition();
-  const [editing, setEditing]             = useState<MemberRow | null>(null);
+  const [memberList, setMemberList]     = useState(members);
+  const [invitations, setInvitations]   = useState(initialInvitations);
+  const [email, setEmail]               = useState("");
+  const [inviteRole, setInviteRole]     = useState<"admin"|"member"|"viewer">("member");
+  const [token]                         = useState(genToken);
+  const [inviteError, setInviteError]   = useState<string | null>(null);
+  const [result, setResult]             = useState<{ token: string; emailSent: boolean } | null>(null);
+  const [copied, setCopied]             = useState(false);
+  const [isPending, startTransition]    = useTransition();
+  const [editing, setEditing]           = useState<MemberRow | null>(null);
+  const [viewingInvite, setViewingInvite] = useState<WorkspaceInvitation | null>(null);
 
   const canManage = currentUserRole === "owner" || currentUserRole === "admin";
   const isOwner   = currentUserId === ownerId;
-
-  function refreshToken() { setToken(genToken()); }
 
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -328,13 +400,14 @@ export function TeamSettings({
       });
       const data = await res.json();
       if (!res.ok) { setInviteError(data.error ?? "Erro ao enviar convite."); return; }
-      setResult({ token: data.accessToken ?? _token, emailSent: data.emailSent ?? false, emailErr: data.emailError });
+      const realToken = data.accessToken ?? _token;
+      setResult({ token: realToken, emailSent: data.emailSent ?? false });
       setEmail("");
-      refreshToken();
       setInvitations(p => [...p, {
         id: crypto.randomUUID(), workspace_id: ownerId,
         email: _email.toLowerCase(), role: inviteRole,
-        token: "", invited_by: ownerId,
+        token: realToken,
+        invited_by: ownerId,
         expires_at: "2099-12-31T23:59:59Z",
         accepted_at: null, created_at: new Date().toISOString(),
       }]);
@@ -354,15 +427,13 @@ export function TeamSettings({
 
   async function revokeInvite(id: string) {
     const r = await fetch(`/api/workspace/invitations/${id}`, { method: "DELETE" });
-    if (r.ok) setInvitations(p => p.filter(i => i.id !== id));
+    if (r.ok) { setInvitations(p => p.filter(i => i.id !== id)); setViewingInvite(null); }
   }
 
   const pendingInvites = invitations.filter(i => !i.accepted_at);
 
-  // shared row styles
   const ROW: React.CSSProperties = {
-    display: "flex", alignItems: "center", gap: 10,
-    padding: "10px 0",
+    display: "flex", alignItems: "center", gap: 10, padding: "10px 0",
   };
   const HR: React.CSSProperties = {
     height: 1, background: "rgba(255,255,255,0.04)", border: "none", margin: "0",
@@ -371,6 +442,7 @@ export function TeamSettings({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32, maxWidth: 560 }}>
 
+      {/* Drawers */}
       {editing && (
         <PermDrawer
           member={editing} canSetAdmin={isOwner}
@@ -379,6 +451,13 @@ export function TeamSettings({
             setMemberList(p => p.map(m => m.user_id === editing.user_id ? { ...m, ...u } : m));
             setEditing(null);
           }}
+        />
+      )}
+      {viewingInvite && (
+        <InviteDrawer
+          inv={viewingInvite}
+          onClose={() => setViewingInvite(null)}
+          onRevoke={() => revokeInvite(viewingInvite.id)}
         />
       )}
 
@@ -397,9 +476,7 @@ export function TeamSettings({
       {canManage && (
         <div>
           <p style={LABEL_STYLE}>Convidar</p>
-
           <form onSubmit={sendInvite}>
-            {/* Main row */}
             <div style={{
               display: "flex", alignItems: "center",
               border: "1px solid rgba(255,255,255,0.07)",
@@ -428,8 +505,7 @@ export function TeamSettings({
                 style={{
                   padding: "10px 10px", background: "none", border: "none",
                   color: "rgba(255,255,255,0.45)", fontSize: 12,
-                  outline: "none", fontFamily: "inherit", cursor: "pointer",
-                  flexShrink: 0,
+                  outline: "none", fontFamily: "inherit", cursor: "pointer", flexShrink: 0,
                 }}
               >
                 <option value="viewer">Leitor</option>
@@ -450,30 +526,22 @@ export function TeamSettings({
                 {isPending ? "…" : "Convidar →"}
               </button>
             </div>
-
-            {/* Token strip */}
-            <TokenStrip token={token} onRefresh={refreshToken} />
           </form>
 
-          {/* Error */}
           {inviteError && (
             <p style={{ fontSize: 11, color: "#fca5a5", marginTop: 8 }}>⚠ {inviteError}</p>
           )}
 
-          {/* Success */}
+          {/* Success: show token once, right after creating */}
           {result && (
             <div style={{
-              marginTop: 10,
-              padding: "12px 14px",
-              borderRadius: 9,
-              background: "rgba(52,211,153,0.04)",
-              border: "1px solid rgba(52,211,153,0.1)",
+              marginTop: 10, padding: "12px 14px", borderRadius: 9,
+              background: "rgba(52,211,153,0.04)", border: "1px solid rgba(52,211,153,0.1)",
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
             }}>
               <div>
                 <p style={{ fontSize: 11, color: "rgba(52,211,153,0.7)", marginBottom: 5 }}>
-                  Convite criado
-                  {result.emailSent ? " · email enviado" : " · sem email"}
+                  Convite criado{result.emailSent ? " · email enviado" : " · sem email"}
                 </p>
                 <code style={{
                   fontSize: 18, fontFamily: "'SF Mono','Fira Code',monospace",
@@ -501,7 +569,7 @@ export function TeamSettings({
           <span style={{ fontSize: 10, color: "rgba(255,255,255,0.18)" }}>{memberList.length + 1}</span>
         </div>
 
-        {/* Owner */}
+        {/* Owner row — not editable */}
         <div style={ROW}>
           <Av name={ownerProfile.name || ownerProfile.email} url={ownerProfile.avatar_url} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -524,16 +592,27 @@ export function TeamSettings({
             <div key={m.user_id}>
               <hr style={HR} />
               <div style={ROW}>
-                <Av name={m.name || m.email} url={m.avatar_url} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.82)" }}>
-                    {m.name || m.email.split("@")[0]}
-                  </span>
-                  {isSelf && <span style={{ marginLeft: 6, fontSize: 10, color: "rgba(255,255,255,0.2)" }}>você</span>}
-                  <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.28)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {m.email}
-                  </span>
-                </div>
+                {/* Clickable left area → opens drawer */}
+                <button
+                  onClick={canEdit ? () => setEditing(m) : undefined}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0,
+                    background: "none", border: "none", cursor: canEdit ? "pointer" : "default",
+                    padding: 0, textAlign: "left",
+                  }}
+                >
+                  <Av name={m.name || m.email} url={m.avatar_url} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.82)" }}>
+                      {m.name || m.email.split("@")[0]}
+                    </span>
+                    {isSelf && <span style={{ marginLeft: 6, fontSize: 10, color: "rgba(255,255,255,0.2)" }}>você</span>}
+                    <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.28)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {m.email}
+                    </span>
+                  </div>
+                </button>
+
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: ROLE_HUE[m.role] ?? ROLE_HUE.viewer }}>
                     {ROLE_LABELS[m.role]}
@@ -541,20 +620,20 @@ export function TeamSettings({
                   {canEdit && (
                     <button
                       onClick={() => setEditing(m)}
+                      title={custom ? "Permissões customizadas" : "Configurar permissões"}
                       style={{
-                        padding: "3px 8px", borderRadius: 5, fontSize: 11, fontWeight: 500,
-                        cursor: "pointer", fontFamily: "inherit", transition: "all 0.1s",
-                        background: "none",
-                        border: `1px solid ${custom ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.07)"}`,
-                        color: custom ? "rgba(251,191,36,0.65)" : "rgba(255,255,255,0.3)",
+                        padding: "4px", borderRadius: 5, border: "none",
+                        cursor: "pointer", transition: "all 0.1s", display: "flex",
+                        background: custom ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.04)",
+                        color: custom ? "rgba(251,191,36,0.65)" : "rgba(255,255,255,0.25)",
                       }}
-                      onMouseEnter={e => { (e.currentTarget).style.borderColor = "rgba(255,255,255,0.18)"; (e.currentTarget).style.color = "rgba(255,255,255,0.7)"; }}
+                      onMouseEnter={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.7)"; (e.currentTarget).style.background = "rgba(255,255,255,0.08)"; }}
                       onMouseLeave={e => {
-                        (e.currentTarget).style.borderColor = custom ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.07)";
-                        (e.currentTarget).style.color = custom ? "rgba(251,191,36,0.65)" : "rgba(255,255,255,0.3)";
+                        (e.currentTarget).style.color = custom ? "rgba(251,191,36,0.65)" : "rgba(255,255,255,0.25)";
+                        (e.currentTarget).style.background = custom ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.04)";
                       }}
                     >
-                      {custom ? "⚡" : "·"} perm
+                      <IconGear />
                     </button>
                   )}
                   {canEdit && (
@@ -564,8 +643,7 @@ export function TeamSettings({
                       style={{
                         background: "none", border: "none", cursor: "pointer",
                         color: "rgba(255,255,255,0.15)", lineHeight: 1,
-                        padding: "4px", transition: "color 0.1s", display: "flex",
-                        borderRadius: 5,
+                        padding: "4px", transition: "color 0.1s", display: "flex", borderRadius: 5,
                       }}
                       onMouseEnter={e => { (e.currentTarget).style.color = "#f87171"; }}
                       onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.15)"; }}
@@ -595,21 +673,30 @@ export function TeamSettings({
             <div key={inv.id}>
               {i > 0 && <hr style={HR} />}
               <div style={ROW}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                  border: "1px dashed rgba(255,255,255,0.1)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, color: "rgba(255,255,255,0.2)",
-                }}>?</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                    {inv.email}
-                  </span>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>
-                    {inv.expires_at.startsWith("2099") ? "permanente" : new Date(inv.expires_at).toLocaleDateString("pt-BR")}
-                  </span>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: ROLE_HUE[inv.role] ?? ROLE_HUE.viewer }}>
+                {/* Clickable row → opens invite drawer */}
+                <button
+                  onClick={() => setViewingInvite(inv)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0,
+                    background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left",
+                  }}
+                >
+                  <div style={{
+                    width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                    border: "1px dashed rgba(255,255,255,0.1)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, color: "rgba(255,255,255,0.2)",
+                  }}>?</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+                      {inv.email}
+                    </span>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>
+                      {inv.expires_at.startsWith("2099") ? "permanente" : new Date(inv.expires_at).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                </button>
+                <span style={{ fontSize: 11, fontWeight: 600, color: ROLE_HUE[inv.role] ?? ROLE_HUE.viewer, flexShrink: 0 }}>
                   {ROLE_LABELS[inv.role]}
                 </span>
                 <button
@@ -618,8 +705,7 @@ export function TeamSettings({
                   style={{
                     background: "none", border: "none", cursor: "pointer",
                     color: "rgba(255,255,255,0.15)", lineHeight: 1,
-                    padding: "4px", transition: "color 0.1s", display: "flex",
-                    borderRadius: 5,
+                    padding: "4px", transition: "color 0.1s", display: "flex", borderRadius: 5,
                   }}
                   onMouseEnter={e => { (e.currentTarget).style.color = "#f87171"; }}
                   onMouseLeave={e => { (e.currentTarget).style.color = "rgba(255,255,255,0.15)"; }}
