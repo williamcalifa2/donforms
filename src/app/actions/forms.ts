@@ -9,8 +9,8 @@ import type { FormField, FormSettings } from "@/types/database.types";
 
 // Random 8-char alphanumeric slug (Typeform style)
 function randomSlug(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
 // Helper: supabase client sem type-checking de tabela
